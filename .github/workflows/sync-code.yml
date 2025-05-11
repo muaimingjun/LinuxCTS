@@ -30,4 +30,4 @@ jobs:
           # 注意替换为你的 GitHub 源仓库地址
           source-repo: git@github.com:hyh1750522171/LinuxCTS.git
           # 注意替换为你的 Gitee 目标仓库地址
-          destination-repo: git@gitcode.com:hyh1750522171/LinuxCTS.git
+          destination-repo: git@gitcode.com:muaimingjun/LinuxCTS.git
