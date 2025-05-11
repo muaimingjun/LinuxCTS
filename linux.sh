@@ -2,6 +2,7 @@
 
 echo "正在检测机器所在国家和地区...请稍后...." 
 sleep 1
+
 url=https://ifconfig.icu
 country=$(curl -s ${url}/country)
 if [[ $country == *"China"* ]]; then
@@ -9,6 +10,7 @@ if [[ $country == *"China"* ]]; then
 else
     download_url=https://raw.githubusercontent.com/muaimingjun/LinuxCTS/main
 fi
+
 # 引用全局初始化脚本
 source <(curl -s ${download_url}/os/all/init.sh)
 
