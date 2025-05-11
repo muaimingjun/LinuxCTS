@@ -141,7 +141,7 @@ ${blue}=                                                   =${Font}
 ${blue}=                当前版本 V0.3                      =${Font}
 ${blue}=            更新时间 2024年11月29日                =${Font}
 ${blue}=                bug 反馈                           =${Font}
-${blue}= https://github.com/hyh1750522171/LinuxCTS/issues  =${Font}
+${blue}= https://github.com/muaimingjun/LinuxCTS/issues  =${Font}
 ${blue}=                                                   =${Font}
 ${blue}=====================================================${Font}
 操作系统${Green} $opsy ${Font}CPU${Green} $cores ${Font}核 系统内存${Green} ${tram} ${Font}MB

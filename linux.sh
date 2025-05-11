@@ -7,7 +7,7 @@ country=$(curl -s ${url}/country)
 if [[ $country == *"China"* ]]; then
     download_url=https://gitee.com/muaimingjun/LinuxCTS/raw/main
 else
-    download_url=https://raw.githubusercontent.com/hyh1750522171/LinuxCTS/main
+    download_url=https://raw.githubusercontent.com/muaimingjun/LinuxCTS/main
 fi
 # 引用全局初始化脚本
 source <(curl -s ${download_url}/os/all/init.sh)
