@@ -78,9 +78,6 @@ if [[ "$IP_VERSION" != "ipv4" && "$IP_VERSION" != "ipv6" ]]; then
 fi
 
 source /etc/os-release
-VERSION_CODENAME=$VERSION_CODENAME
-ID=$ID
-VERSION_ID=$VERSION_ID
 #  判断是不是 x86_64 架构
 download_source_list() {
     TEMP_FILE=$(mktemp)
