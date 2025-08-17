@@ -48,6 +48,8 @@ else
                     "ubuntu")
                         # 定义NVIDIA驱动版本列表
                         nvidia_versions=(
+                            "nvidia-driver-575"
+                            "nvidia-driver-570"
                             "nvidia-driver-550"
                             "nvidia-driver-545"
                             "nvidia-driver-535"
@@ -105,7 +107,7 @@ else
                                 ;;
 
                             "24.04")
-                                # Commands specific to Ubuntu 18.04
+                                # Commands specific to Ubuntu 24.04
                                 apt-get update -y
                                 apt install $selected_version -y
                                 ;;
