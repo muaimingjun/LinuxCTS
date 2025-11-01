@@ -53,6 +53,9 @@ jobs:
     needs: publish-docker
 
     steps:
+      - name: Remove existing directory for Gitee
+        run: rm -rf LinuxCTS.git
+
       - name: Sync to Gitee
         uses: wearerequired/git-mirror-action@master
         env:
@@ -60,7 +63,9 @@ jobs:
         with:
           source-repo: git@github.com:muaimingjun/LinuxCTS.git
           destination-repo: git@gitee.com:muaimingjun/LinuxCTS.git
-          clean: true   # 清空目录，避免冲突
+
+      - name: Remove existing directory for GitCode
+        run: rm -rf LinuxCTS.git
 
       - name: Sync to GitCode
         uses: wearerequired/git-mirror-action@master
@@ -69,4 +74,4 @@ jobs:
         with:
           source-repo: git@github.com:muaimingjun/LinuxCTS.git
           destination-repo: git@gitcode.com:muaimingjun/LinuxCTS.git
-          clean: true   # 清空目录，避免冲突
+
