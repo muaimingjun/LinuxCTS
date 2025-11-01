@@ -35,4 +35,4 @@ jobs:
             platforms: linux/amd64
             push: true
             tags: |
-                 docker.io/${{ secrets.DOCKERHUB_USERNAME }}/LinuxCTS:latest
+                 docker.io/itgpt/LinuxCTS:latest
