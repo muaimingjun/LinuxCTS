@@ -75,4 +75,4 @@ jobs:
         with:
           source-repo: git@github.com:muaimingjun/LinuxCTS.git
           destination-repo: git@gitcode.com:muaimingjun/LinuxCTS.git
-          args: --mirror
+
