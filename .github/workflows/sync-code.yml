@@ -1,45 +1,29 @@
-name: Sync To Gitee
+name: Build & Publish Docker + Sync to Mirrors
 
-on: [ push, delete, create ]
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+# 🚦 防止重复运行同一分支的任务
+concurrency:
+  group: publish-docker-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  gitee:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Sync to Gitee
-        uses: wearerequired/git-mirror-action@master
-        env:
-          # 注意在 Settings->Secrets 配置 GITEE_RSA_PRIVATE_KEY
-          SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
-        with:
-          # 注意替换为你的 GitHub 源仓库地址
-          source-repo: git@github.com:muaimingjun/LinuxCTS.git
-          # 注意替换为你的 Gitee 目标仓库地址
-          destination-repo: git@gitee.com:muaimingjun/LinuxCTS.git
-
-
-  gitcode:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Sync to Gitcode
-        uses: wearerequired/git-mirror-action@master
-        env:
-          # 注意在 Settings->Secrets 配置 GITEE_RSA_PRIVATE_KEY
-          SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
-        with:
-          # 注意替换为你的 GitHub 源仓库地址
-          source-repo: git@github.com:muaimingjun/LinuxCTS.git
-          # 注意替换为你的 Gitee 目标仓库地址
-          destination-repo: git@gitcode.com:muaimingjun/LinuxCTS.git
-  
   publish-docker:
+    name: 🐳 Build & Push Docker Image
     runs-on: ubuntu-latest
+
     steps:
       - name: 拉取源码
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-            fetch-depth: 1
-      - name: 设置 QEMU
+          fetch-depth: 1
+
+      - name: 设置 QEMU（支持多平台构建）
         uses: docker/setup-qemu-action@v3
 
       - name: 设置 Docker Buildx
@@ -48,14 +32,47 @@ jobs:
       - name: 登录到 DockerHub
         uses: docker/login-action@v3
         with:
-            username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 构建和推送Docker hub
-        uses: docker/build-push-action@v6
+      - name: 构建并推送 Docker 镜像（自动识别用户名）
+        run: |
+          USERNAME=$(echo "${{ secrets.DOCKERHUB_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="${USERNAME}/linuxcts:latest"
+          echo "🚀 正在构建并推送镜像: $IMAGE"
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --cache-from=type=gha \
+            --cache-to=type=gha,mode=max \
+            -t "$IMAGE" \
+            --push .
+
+  sync-mirrors:
+    name: 🔁 Sync to Gitee & GitCode
+    runs-on: ubuntu-latest
+    needs: publish-docker
+
+    steps:
+      - name: Remove directory for Gitee
+        run: sudo rm -rf LinuxCTS.git
+
+      - name: Sync to Gitee
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
         with:
-            context: .
-            platforms: linux/amd64
-            push: true
-            tags: |
-                  docker.io/itgpt/LinuxCTS:latest
+          source-repo: git@github.com:muaimingjun/LinuxCTS.git
+          destination-repo: git@gitee.com:muaimingjun/LinuxCTS.git
+          args: --mirror
+
+      - name: Remove directory for GitCode
+        run: sudo rm -rf LinuxCTS.git
+
+      - name: Sync to GitCode
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
+        with:
+          source-repo: git@github.com:muaimingjun/LinuxCTS.git
+          destination-repo: git@gitcode.com:muaimingjun/LinuxCTS.git
+
