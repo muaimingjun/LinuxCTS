@@ -1,62 +1,96 @@
-name: Sync To Gitee
+name: Publish Docker & Sync Repos
 
-on: [ push, delete, create ]
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+concurrency:
+  group: publish-docker-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: linuxcts
+  DOCKER_USER: ${{ toLower(secrets.DOCKERHUB_USERNAME) }}
 
 jobs:
+  publish-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up QEMU (for multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ✅ 构建缓存机制
+      - name: Set up build cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.ref }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build and push Docker image (multi-arch)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          # 同时构建 amd64 + arm64 两种架构
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            docker.io/${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
+            docker.io/${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
+
+      - name: Output pushed image names
+        run: |
+          echo "✅ Pushed images:"
+          echo "  docker.io/${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest"
+          echo "  docker.io/${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+  # 🚀 自动同步到 Gitee
   gitee:
+    needs: publish-docker
     runs-on: ubuntu-latest
     steps:
       - name: Sync to Gitee
         uses: wearerequired/git-mirror-action@master
         env:
-          # 注意在 Settings->Secrets 配置 GITEE_RSA_PRIVATE_KEY
           SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
         with:
-          # 注意替换为你的 GitHub 源仓库地址
           source-repo: git@github.com:muaimingjun/LinuxCTS.git
-          # 注意替换为你的 Gitee 目标仓库地址
           destination-repo: git@gitee.com:muaimingjun/LinuxCTS.git
 
-
+  # 🚀 自动同步到 GitCode
   gitcode:
+    needs: publish-docker
     runs-on: ubuntu-latest
     steps:
-      - name: Sync to Gitcode
+      - name: Sync to GitCode
         uses: wearerequired/git-mirror-action@master
         env:
-          # 注意在 Settings->Secrets 配置 GITEE_RSA_PRIVATE_KEY
           SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
         with:
-          # 注意替换为你的 GitHub 源仓库地址
           source-repo: git@github.com:muaimingjun/LinuxCTS.git
-          # 注意替换为你的 Gitee 目标仓库地址
           destination-repo: git@gitcode.com:muaimingjun/LinuxCTS.git
-  
-  publish-docker:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 拉取源码
-        uses: actions/checkout@v3
-        with:
-            fetch-depth: 1
-      - name: 设置 QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: 设置 Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: 登录到 DockerHub
-        uses: docker/login-action@v3
-        with:
-            username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: 构建和推送Docker hub
-        uses: docker/build-push-action@v6
-        with:
-            context: .
-            platforms: linux/amd64
-            push: true
-            tags: |
-                  docker.io/itgpt/linuxcts:latest
-                  docker.io/itgpt/linuxcts:${{ github.sha }}
