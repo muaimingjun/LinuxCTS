@@ -53,18 +53,20 @@ jobs:
     needs: publish-docker
 
     steps:
-      - name: 同步到 Gitee
+      - name: Sync to Gitee
         uses: wearerequired/git-mirror-action@master
         env:
           SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
         with:
           source-repo: git@github.com:muaimingjun/LinuxCTS.git
           destination-repo: git@gitee.com:muaimingjun/LinuxCTS.git
+          clean: true   # 清空目录，避免冲突
 
-      - name: 同步到 GitCode
+      - name: Sync to GitCode
         uses: wearerequired/git-mirror-action@master
         env:
           SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
         with:
           source-repo: git@github.com:muaimingjun/LinuxCTS.git
           destination-repo: git@gitcode.com:muaimingjun/LinuxCTS.git
+          clean: true   # 清空目录，避免冲突
