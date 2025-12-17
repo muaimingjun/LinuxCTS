@@ -1,0 +1,45 @@
+{
+  "hostname": "hyh",
+  "os": "linux",
+  "platform": "ubuntu",
+  "platform_version": "22.04",
+  "kernel_version": "6.6.87.2-microsoft-standard-WSL2",
+  "uptime_seconds": 21030,
+  "cpu_model": "AMD Ryzen 5 5600H with Radeon Graphics",
+  "cpu_cores": 12,
+  "network_interfaces": [
+    {
+      "interface": "lo",
+      "ip": "127.0.0.1",
+      "is_loopback": true
+    },
+    {
+      "interface": "lo",
+      "ip": "10.255.255.254",
+      "is_loopback": false
+    },
+    {
+      "interface": "eth0",
+      "ip": "172.27.185.68",
+      "is_loopback": false,
+      "mac": "00:15:5d:11:62:24"
+    },
+    {
+      "interface": "docker0",
+      "ip": "172.17.0.1",
+      "is_loopback": false,
+      "mac": "26:5e:37:4b:6d:b7"
+    }
+  ],
+  "gpus": [
+    {
+      "pci": "22ed:00:00.0",
+      "model": "Microsoft Corporation Device",
+      "kernel_driver": "virtio-pci",
+      "driver_present": true,
+      "has_drm_device": false
+    }
+  ],
+  "total_memory_gb": 7,
+  "mac_address": "00:15:5d:11:62:24"
+}
