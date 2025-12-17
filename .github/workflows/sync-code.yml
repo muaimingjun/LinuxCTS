@@ -15,7 +15,7 @@ concurrency:
 jobs:
   publish-docker:
     name: 🐳 Build & Push Docker Image
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: 拉取源码
@@ -49,7 +49,7 @@ jobs:
 
   sync-mirrors:
     name: 🔁 Sync to Gitee & GitCode
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: publish-docker
 
     steps:
