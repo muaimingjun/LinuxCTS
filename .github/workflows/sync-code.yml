@@ -1,4 +1,4 @@
-name: Build & Publish Docker + Sync to Mirrors
+name: "🚀 Build & Publish Docker + Sync to Mirrors"
 
 on:
   push:
@@ -14,28 +14,28 @@ concurrency:
 
 jobs:
   publish-docker:
-    name: 🐳 Build & Push Docker Image
+    name: "🐳 Build & Push Docker Image"
     runs-on: self-hosted
 
     steps:
-      - name: 拉取源码
+      - name: "📂 拉取源码"
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: 设置 QEMU（支持多平台构建）
+      - name: "🛠️ 设置 QEMU (支持多平台构建)"
         uses: docker/setup-qemu-action@v3
 
-      - name: 设置 Docker Buildx
+      - name: "🏗️ 设置 Docker Buildx"
         uses: docker/setup-buildx-action@v3
 
-      - name: 登录到 DockerHub
+      - name: "🔑 登录到 DockerHub"
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 构建并推送 Docker 镜像（自动识别用户名）
+      - name: "📤 构建并推送 Docker 镜像"
         run: |
           USERNAME=$(echo "${{ secrets.DOCKERHUB_USERNAME }}" | tr '[:upper:]' '[:lower:]')
           IMAGE="${USERNAME}/linuxcts:latest"
@@ -48,15 +48,15 @@ jobs:
             --push .
 
   sync-mirrors:
-    name: 🔁 Sync to Gitee & GitCode
+    name: "🔁 Sync to Gitee & GitCode"
     runs-on: self-hosted
     needs: publish-docker
 
     steps:
-      - name: Remove directory for Gitee
+      - name: "🧹 清理 Gitee 工作目录"
         run: sudo rm -rf LinuxCTS.git
 
-      - name: Sync to Gitee
+      - name: "🔄 同步至 Gitee"
         uses: wearerequired/git-mirror-action@master
         env:
           SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
@@ -65,14 +65,14 @@ jobs:
           destination-repo: git@gitee.com:muaimingjun/LinuxCTS.git
           args: --mirror
 
-      - name: Remove directory for GitCode
+      - name: "🧹 清理 GitCode 工作目录"
         run: sudo rm -rf LinuxCTS.git
 
-      - name: Sync to GitCode
+      - name: "🔄 同步至 GitCode"
         uses: wearerequired/git-mirror-action@master
         env:
           SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_KEY }}
         with:
           source-repo: git@github.com:muaimingjun/LinuxCTS.git
           destination-repo: git@gitcode.com:muaimingjun/LinuxCTS.git
-
+          args: --mirror
