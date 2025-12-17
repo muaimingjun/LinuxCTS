@@ -49,7 +49,7 @@ jobs:
 
   sync-mirrors:
     name: "🔁 Sync to Gitee & GitCode"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: publish-docker
 
     steps:
