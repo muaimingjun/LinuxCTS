@@ -30,7 +30,7 @@ start_linux(){
 =  ${Green}22${Font}  Linux修改服务器DNS  Modify server DNS  
 =  ${Green}23${Font}  流媒体区域限制测试  Streaming media testing  
 =  ${Green}24${Font}  Linux系统bbr-tcp加速  System bbr-tcp speed up  
-=  ${Green}25${Font}  Linux网络重装dd系统  Network reloading system  
+=  ${Green}25${Font}  Linux网络重装系统  Network reinstall system
 =
 =  ${Green}99${Font}  退出当前脚本  Exit the current script  
 ====================================================="
@@ -67,7 +67,7 @@ start_linux(){
         source <(curl -s ${download_url}/tools/tcp.sh)
         ;;
     25)
-        source <(curl -s https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/Network-Reinstall-System-Modify.sh )
+        source <(curl -fsSL ${download_url}/os/Network-Reinstall-System-Modify/Network-Reinstall-System-Modify.sh)
         ;;
     99)
         echo -e "\n${GreenBG}感谢使用！欢迎下次使用！${Font}\n" && exit
