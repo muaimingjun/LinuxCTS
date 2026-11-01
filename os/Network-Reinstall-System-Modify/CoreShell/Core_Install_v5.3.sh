@@ -8,7 +8,7 @@
 ## Technical support is provided by the CXT (CXTHHHHH.com). (based on the original version of Vicer)
 
 ## Magic Modify version author:
-## Default root password: cxthhhhh.com
+## Default root password: itgpt.top
 ## WebSite: https://cxthhhhh.com
 ## Written By CXT (CXTHHHHH.com)
 
@@ -358,7 +358,7 @@ elif [[ "$Relese" == 'CentOS' ]]; then
 fi
 [ -n "$tmpWORD" ] && dependence openssl
 [[ -n "$tmpWORD" ]] && myPASSWORD="$(openssl passwd -1 "$tmpWORD")";
-[[ -z "$myPASSWORD" ]] && myPASSWORD='$1$UIl1uSg0$tAW9qjOqoCto0CIUgUwHT1';
+[[ -z "$myPASSWORD" ]] && myPASSWORD='$1$MMcy7pfQ$NouzabSKpafM3gDajeASa.';
 
 tempDisk=`getDisk`; [ -n "$tempDisk" ] && IncDisk="$tempDisk"
 
@@ -562,7 +562,7 @@ if [[ "$UbuntuNetboot" == '1' ]]; then
   else
     UbuntuNetBootNet="ip=dhcp"
   fi
-  UbuntuPWHASH="$(openssl passwd -6 "${tmpWORD:-cxthhhhh.com}" 2>/dev/null)"
+  UbuntuPWHASH="$(openssl passwd -6 "${tmpWORD:-itgpt.top}" 2>/dev/null)"
   [[ -n "$UbuntuPWHASH" ]] || UbuntuPWHASH="$myPASSWORD"
 elif [[ "$UbuntuIsoLoader" == '1' ]]; then
   dependence openssl;
@@ -623,7 +623,7 @@ elif [[ "$UbuntuIsoLoader" == '1' ]]; then
   else
     UbuntuNetBootNet="ip=dhcp"
   fi
-  UbuntuPWHASH="$(openssl passwd -6 "${tmpWORD:-cxthhhhh.com}" 2>/dev/null)"
+  UbuntuPWHASH="$(openssl passwd -6 "${tmpWORD:-itgpt.top}" 2>/dev/null)"
   [[ -n "$UbuntuPWHASH" ]] || UbuntuPWHASH="$myPASSWORD"
 elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
   CXTdibase="${UbuntuDibase:-$DIST}"

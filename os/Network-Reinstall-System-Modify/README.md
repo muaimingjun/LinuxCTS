@@ -67,7 +67,8 @@
 - 当前保留 Debian 10/11/12/13 与 Ubuntu 20.04/22.04/24.04/26.04 在线重装，推荐 Debian 12 或 Ubuntu 24.04
 - Ubuntu 24.04/26.04 使用官方 live-server netboot + autoinstall：安装器会在启动后下载约 3 GB 的 ISO 到内存，建议内存 ≥ 4 GB；官方未提供 ARM64 netboot，故仅支持 x86_64
 - 中国大陆环境下 Ubuntu 的内核、initrd 和 ISO 优先从 `mirrors.ustc.edu.cn` 获取，失败时回退 `releases.ubuntu.com`
-- Ubuntu 22.04 官方没有 netboot：脚本先下载 live-server ISO（约 2 GiB），提取其自带的 casper 内核/initrd 后再以 autoinstall 引导；安装时安装器会再次下载同一 ISO，因此需要磁盘预留约 2 GiB、内存 ≥ 4 GiB
+- Ubuntu 22.04 官方没有 netboot：脚本先下载 live-server ISO（约 2 GiB），提取其自带的 casper 内核/initrd 后再以 autoinstall 引导；安装时安装器会再次下载同一 ISO，因此需要磁盘预留约 2 GiB、内存 ≥ 4 GiB（已在虚拟机实测通过）
+- 默认账户：`ubuntu`（普通用户）与 `root`，默认密码 `itgpt.top`，SSH 端口 22；安装完成后请立即修改
 - 已修复：UEFI 菜单分支条件写法错误导致永远走 Legacy 菜单；补充 Debian 12/13、Ubuntu 22.04/24.04/26.04 版本映射
 
 ## 一键网络重装系统 - 魔改版（Network-Reinstall-System-Modify）
@@ -121,7 +122,7 @@ https://bbs.cxthhhhh.com/
 ### 这里和我博客中的教程将涵盖大多数问题的答案。
 
 1. 问：系统安装的默认密码？  
-答：通常情况下，默认密码为[cxthhhhh.com]。为了防止暴力破解造成安全隐患，您必须在安装后立即更改默认密码，并做好安全防护！  
+答：通常情况下，默认密码为[itgpt.top]。为了防止暴力破解造成安全隐患，您必须在安装后立即更改默认密码，并做好安全防护！  
 
 2. 问：如何连接和管理我的新系统？  
 答：由于硬件配置和网络环境的不同，安装需要10到60分钟，请耐心等待。安装完成后，您可以通过IP:22(Linux SSH)/IP:3389(Windows RDP)进行连接。  
@@ -139,7 +140,7 @@ https://bbs.cxthhhhh.com/
 ### Here and the tutorials in my blog will cover the answers to most questions.
 
 1. Q：The default password for the system installation?  
-A：Usually, Default password is [cxthhhhh.com]. In order to prevent potential safety hazards caused by brute force cracking, you must change the default password immediately after installation and do a good job of safety protection!  
+A：Usually, Default password is [itgpt.top]. In order to prevent potential safety hazards caused by brute force cracking, you must change the default password immediately after installation and do a good job of safety protection!  
 
 2. Q：How to connect and control my new system？  
 A：Due to different hardware configuration and network environment, the installation takes 15 to 60 minutes, please be patient. Once the installation is complete, you can connect via IP: 22 (Linux SSH) / IP: 3389 (Windows RDP).  

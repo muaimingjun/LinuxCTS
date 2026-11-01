@@ -8,7 +8,7 @@
 ## Technical support is provided by the CXT (CXTHHHHH.com). (based on the original Version of Vicer)
 
 ## Magic Modify Version author:
-## Default root password: cxthhhhh.com
+## Default root password: itgpt.top
 ## WebSite: https://cxthhhhh.com
 ## Written By CXT (CXTHHHHH.com)
 
@@ -49,8 +49,8 @@ echo -e "\n"
 echo -e "\033[33m 官方更新地址（Official update address）：CXT - Enjoy Life | 生活、技术、交友、分享 \033[0m"
 echo -e "\033[33m https://cxthhhhh.com/Network-Reinstall-System-Modify \033[0m"
 echo "---------------------------------------------------------------------------------------------------------------------"
-echo " 默认密码: cxthhhhh.com"
-echo " Default password: cxthhhhh.com"
+echo " 默认密码: itgpt.top"
+echo " Default password: itgpt.top"
 echo "---------------------------------------------------------------------------------------------------------------------"
 echo -e "\n"
 sleep 6s
