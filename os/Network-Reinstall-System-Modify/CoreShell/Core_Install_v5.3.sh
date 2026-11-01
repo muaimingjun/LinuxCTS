@@ -532,7 +532,7 @@ if [[ "$UbuntuNetboot" == '1' ]]; then
   UbuntuISOURL=""
   for UbuntuBase in "${UbuntuNetbootBases[@]}"; do
     UbuntuNetbootURL="${UbuntuBase}/netboot/${VER}"
-    echo -e "Netboot: ${UbuntuNetbootURL}"
+    echo -e "\033[36mNetboot:\033[0m ${UbuntuNetbootURL}"
     if ! wget --no-check-certificate -qO '/tmp/vmlinuz' "${UbuntuNetbootURL}/linux" || [ ! -s '/tmp/vmlinuz' ]; then
       echo -e "\033[33mWarn: 无法从 ${UbuntuBase} 获取 netboot 内核，尝试下一线路。\033[0m"
       continue
@@ -554,7 +554,7 @@ if [[ "$UbuntuNetboot" == '1' ]]; then
     echo -ne "\033[31mError! \033[0mCannot download Ubuntu ${UbuntuRelease} netboot images or determine the ISO URL. \n"
     exit 1
   fi
-  echo -e "ISO: ${UbuntuISOURL}"
+  echo -e "\033[36mISO:\033[0m ${UbuntuISOURL}"
   if [[ -n "$IPv4" ]] && [[ -n "$MASK" ]] && [[ -n "$GATE" ]]; then
     UbuntuNetBootNet="ip=$IPv4::$GATE:$MASK::$interface:none:$ipDNS"
     # 当前系统若使用传统 eth* 命名，安装器内核也需要关闭可预测网卡命名
@@ -585,9 +585,9 @@ elif [[ "$UbuntuIsoLoader" == '1' ]]; then
     echo -ne "\033[31mError! \033[0mCannot locate the Ubuntu ${UbuntuInstallRelease} live-server ISO. \n"
     exit 1
   fi
-  echo -e "ISO: ${UbuntuISOURL}"
+  echo -e "\033[36mISO:\033[0m ${UbuntuISOURL}"
   UbuntuISOLocal="/var/tmp/ubuntu-${UbuntuInstallRelease}-live.iso"
-  echo -e "Downloading live-server ISO (about 2GB) to ${UbuntuISOLocal} ..."
+  echo -e "\033[33mDownloading live-server ISO (about 2GB) to ${UbuntuISOLocal} ...\033[0m"
   if ! wget --no-check-certificate -O "$UbuntuISOLocal" "$UbuntuISOURL"; then
     rm -f "$UbuntuISOLocal"
     echo -ne "\033[31mError! \033[0mDownload live-server ISO failed. \n"
