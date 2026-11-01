@@ -1,0 +1,53 @@
+#cloud-config
+autoinstall:
+  version: 1
+  # 关键设置：在分区阶段停下进行手动操作，防止误删 Windows 分区
+  interactive-sections:
+    - storage
+  # 1. 关键：设置中国标准时区 (上海)
+  timezone: Asia/Shanghai
+  
+  # 语言与区域设置
+  locale: zh_CN.UTF-8
+  keyboard:
+    layout: us
+  
+  # 用户信息设置
+  identity:
+    realname: "user"
+    hostname: "ubuntu2404"
+    username: "user"
+    password: "$6$noSZxAW6v5tOwk5x$wisknVXN8GRUY2grFtyzNd5G7SssuPvGJqIO4GFJukl2auHdR7SuYPtnTNupUINqFang1DTHYMMYOOR/U1Doe1"
+  
+  # 1. 自动换源 (使用中科大 USTC 镜像站)
+  # apt:
+  #   preserve_sources_list: false
+  #   primary:
+  #     - arches: [default]
+  #       uri: http://mirrors.ustc.edu.cn/ubuntu/
+
+  # 2. 自动安装必要软件
+  packages:
+    - curl
+    - wget
+    - git
+    - neovim
+    - ssh
+    - net-tools
+    - tree
+
+  # 安装后的自动更新设置
+  updates: all
+  
+  # 3. 结束后处理 # 5. 解决双系统时间冲突：将硬件时钟设为本地时间 (防止 Windows 时间错乱)
+  late-commands:
+    - |
+      curtin in-target -- sh -c "echo 'GRUB_DISABLE_OS_PROBER=false' >> /etc/default/grub"
+      curtin in-target -- sh -c "sed -i 's/GRUB_TIMEOUT_STYLE=hidden/GRUB_TIMEOUT_STYLE=menu/' /etc/default/grub"
+      curtin in-target -- sh -c "sed -i 's/GRUB_TIMEOUT=0/GRUB_TIMEOUT=10/' /etc/default/grub"
+      curtin in-target -- update-grub
+      curtin in-target -- sh -c "sed -i 's/#  AutomaticLoginEnable = true/AutomaticLoginEnable = true/' /etc/gdm3/custom.conf"
+      curtin in-target -- sh -c "sed -i 's/#  AutomaticLogin = user1/AutomaticLogin = user/' /etc/gdm3/custom.conf" 
+      
+      # curtin in-target -- timedatectl set-local-rtc 1 --adjust-system-clock
+      # sed -i 's/confirm_exit: true/confirm_exit: false/' /run/curtin-status

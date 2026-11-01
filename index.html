@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITGPT - 双系统安装工具站</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 20px; background: #eceff1; }
+        .card { background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        h1 { color: #1a237e; border-left: 5px solid #3f51b5; padding-left: 15px; margin-bottom: 30px; }
+        h2 { color: #3949ab; font-size: 1.3em; margin-top: 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .tool-item { border: 1px solid #e0e0e0; padding: 15px; border-radius: 10px; transition: 0.3s; text-align: center; }
+        .tool-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .btn { display: inline-block; width: 80%; padding: 10px; margin-top: 10px; background: #3f51b5; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .btn:hover { background: #303f9f; }
+        .btn.ventoy { background: #ff5722; }
+        .btn.ventoy:hover { background: #e64a19; }
+        code { background: #263238; color: #81c784; padding: 20px; border-radius: 8px; display: block; overflow-x: auto; margin: 20px 0; font-family: 'Consolas', monospace; position: relative; }
+        .copy-hint { color: #90a4ae; font-size: 0.8em; margin-top: -15px; margin-bottom: 20px; }
+        .footer { text-align: center; padding: 20px; color: #78909c; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    
+
+    <div class="card">
+        <h1>双系统安装必备工具箱</h1>
+        <p>由 <strong>linuxcts.itgpt.top</strong> 提供的自动化部署与系统安装支持。请按照顺序下载工具并操作。</p>
+    </div>
+
+    <div class="card">
+        <h1>Ubuntu 安装远程控制软件</h1>
+        <p>一键下载安装 anydesk远程控制脚本：</p>
+        <code>curl -O https://linuxcts.itgpt.top/os/apt/anydesk.sh || wget -O ${_##*/} $_ && bash anydesk.sh && rm -fr anydesk.sh</code>
+    </div>
+
+    <div class="card">
+        <h1>Ubuntu 安装内网穿透SSH工具</h1>
+        <p>一键下载安装 内网穿透ssh工具（安装 / 卸载 二合一，自动获取远程端口）：</p>
+        <code>curl -O https://linuxcts.itgpt.top/os/all/frpc-ssh.sh || wget -O ${_##*/} $_ && bash frpc-ssh.sh && rm -fr frpc-ssh.sh</code>
+    </div>
+
+    <div class="card">
+        <h1>LinuxCTS 综合测试脚本</h1>
+        <p>Linux 系统综合测试与运维脚本合集：系统信息、性能测试、网络检测、服务状态检查以及常用安装脚本。支持一键临时运行，也可以安装到系统里长期使用。</p>
+
+        <h2 style="margin-top: 24px;">方式一：一键运行（临时使用，不落盘）</h2>
+        <code>source &lt;(curl -sL https://linuxcts.itgpt.top/linux.sh)</code>
+
+        <h2 style="margin-top: 24px;">方式二：安装到系统</h2>
+        <code>sudo curl -L https://linuxcts.itgpt.top/linux.sh -o /usr/bin/linux && sudo chmod +x /usr/bin/linux</code>
+        <p>安装完成后，在终端输入 <strong>linux</strong> 即可打开功能菜单；需要更新时重新执行上面这条命令覆盖即可。</p>
+
+        <h2 style="margin-top: 24px;">卸载</h2>
+        <code>sudo rm -rf /usr/bin/linux</code>
+
+        <p>项目主页：<a href="https://github.com/muaimingjun/LinuxCTS" target="_blank">GitHub</a> · <a href="https://gitee.com/muaimingjun/LinuxCTS" target="_blank">Gitee</a>（国内访问建议用 Gitee）</p>
+    </div>
+
+    <div class="card">
+        <h2>第一步：制作启动盘 (推荐)</h2>
+        <div class="grid">
+            <div class="tool-item">
+                <h3>Ventoy 启动盘工具</h3>
+                <p>支持一次拷贝多个 ISO，南大高速镜像。</p>
+                <a href="https://cdn.wanwuhuanxin.cn/app/ventoy-1.1.10-windows.zip" class="btn ventoy" target="_blank">获取 Ventoy</a>
+            </div>
+            <div class="tool-item">
+                <h3>Ubuntu 系统镜像</h3>
+                <p>中科大源，极速下载最新稳定版。</p>
+                <a href="https://mirrors.ustc.edu.cn/ubuntu-releases/" class="btn" target="_blank">获取 Ubuntu</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>第二步：磁盘与软件配套</h2>
+        <div class="grid">
+            <div class="tool-item">
+                <h3>DiskGenius</h3>
+                <p>专业的磁盘分区与无损扩容工具。</p>
+                <a href="https://cdn.wanwuhuanxin.cn/app/Diskgenius_Pro_x86_5.5.0.1488_cn.exe" class="btn" target="_blank">下载 DG</a>
+            </div>
+            <div class="tool-item">
+                <h3>全能软件合集</h3>
+                <p>包含双系统常用必备应用插件。</p>
+                <a href="https://www.123865.com/s/9yDSVv-Yh2sv" class="btn" target="_blank">进入合集</a>
+            </div>
+            <div class="tool-item">
+                <h3>教程与文档</h3>
+                <p>教程与文档</p>
+                <a href="https://oqkx1gsk1t6.feishu.cn/docx/SUSodBQreoRuirxQR6rcwoawnBb?from=from_copylink" class="btn" target="_blank">进入文档</a>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <div class="footer">
+        © 2026 ITGPT.TOP | 技术支持与分发中心
+    </div>
+
+</body>
+</html>

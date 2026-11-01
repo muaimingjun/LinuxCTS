@@ -6,7 +6,7 @@ sleep 1
 url=https://ifconfig.icu
 country=$(curl -s ${url}/country)
 if [[ $country == *"China"* ]]; then
-    download_url=https://gitee.com/muaimingjun/LinuxCTS/raw/main
+    download_url=https://linuxcts.itgpt.top
 else
     download_url=https://raw.githubusercontent.com/muaimingjun/LinuxCTS/main
 fi
