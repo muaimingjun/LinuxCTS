@@ -816,6 +816,12 @@ UBEOF
     - curtin in-target -- update-grub
 UBEOF
   fi
+  if [[ "$UbuntuNetboot" == '1' ]] && [[ "$CXTisCN" == 'Yes' ]]; then
+    # 安装完成后把目标系统的 apt 源切换到中科大
+    cat >> "$UbuntuOverlay/autoinstall.yaml" <<UBEOF
+    - curtin in-target -- bash -c "sed -ri 's|https?://[^/ ]*ubuntu\.com/ubuntu/?|https://mirrors.ustc.edu.cn/ubuntu/|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list 2>/dev/null || true"
+UBEOF
+  fi
   cat > "$UbuntuOverlay/conf/param.conf" <<'UBEOF'
 [ -f /autoinstall.yaml ] && cp -f /autoinstall.yaml /root/autoinstall.yaml 2>/dev/null || true
 UBEOF

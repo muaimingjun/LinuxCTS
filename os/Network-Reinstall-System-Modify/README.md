@@ -67,6 +67,7 @@
 - 当前保留 Debian 10/11/12/13 与 Ubuntu 20.04/22.04/24.04/26.04 在线重装，推荐 Debian 12 或 Ubuntu 24.04
 - Ubuntu 24.04/26.04 使用官方 live-server netboot + autoinstall：安装器会在启动后下载约 3 GB 的 ISO 到内存，建议内存 ≥ 4 GB；官方未提供 ARM64 netboot，故仅支持 x86_64
 - 中国大陆环境下，Debian 与 Ubuntu 的软件源、内核/initrd、live-server ISO 全部优先使用 `mirrors.ustc.edu.cn`，中科大缺少时回退官方源；Debian 固件（cdimage 上的 firmware.cpio.gz）中科大未镜像，仍走官方
+- Ubuntu 24.04/26.04 安装完成后会自动把目标系统的 apt 源切换到中科大（仅中国大陆环境）
 - Ubuntu 22.04 官方没有 netboot：脚本先下载 live-server ISO（约 2 GiB），提取其自带的 casper 内核/initrd 后再以 autoinstall 引导；安装时安装器会再次下载同一 ISO，因此需要磁盘预留约 2 GiB、内存 ≥ 4 GiB（已在虚拟机实测通过）
 - 默认账户：`ubuntu`（普通用户）与 `root`，默认密码 `itgpt.top`，SSH 端口 22；安装完成后请立即修改
 - 已修复：UEFI 菜单分支条件写法错误导致永远走 Legacy 菜单；补充 Debian 12/13、Ubuntu 22.04/24.04/26.04 版本映射
