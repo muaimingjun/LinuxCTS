@@ -126,21 +126,10 @@ if [ "$CXTisCN" != "Yes" ];then
 else
     echo -e "${CXT_C}Core Download（CN）...${CXT_N}"
     CXTbaseURL="$CXTrepoCN"
-    CXTrandom=$RANDOM
-    if [ $[CXTrandom%2] == "0" ];then
-        echo "本次随机使用阿里源"
-        CentOSMirrors="--mirror http://mirrors.aliyun.com/centos/"
-        CentOSVaultMirrors="--mirror http://mirrors.aliyun.com/centos-vault/"
-        DebianMirrors="--mirror http://mirrors.aliyun.com/debian/"
-        UbuntuMirrors="--mirror http://mirrors.aliyun.com/ubuntu/"
-    else
-        echo "本次随机使用清华源"
-        CentOSMirrors="--mirror http://mirrors.tuna.tsinghua.edu.cn/centos/"
-        CentOSVaultMirrors="--mirror http://mirrors.tuna.tsinghua.edu.cn/centos-vault/"
-        DebianMirrors="--mirror http://mirrors.tuna.tsinghua.edu.cn/debian/"
-        UbuntuMirrors="--mirror http://mirrors.tuna.tsinghua.edu.cn/ubuntu/"
-    fi
-    # Ubuntu 统一优先使用中科大源
+    echo "本次使用中科大源"
+    CentOSMirrors="--mirror http://mirrors.ustc.edu.cn/centos/"
+    CentOSVaultMirrors="--mirror http://mirrors.ustc.edu.cn/centos-vault/"
+    DebianMirrors="--mirror http://mirrors.ustc.edu.cn/debian/"
     UbuntuMirrors="--mirror http://mirrors.ustc.edu.cn/ubuntu/"
 fi
 
