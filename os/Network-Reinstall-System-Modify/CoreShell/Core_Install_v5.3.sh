@@ -49,9 +49,11 @@ export VER=''
 export setCMD=''
 export setConsole=''
 export UbuntuNetboot='0'
+export UbuntuIsoLoader='0'
 export UbuntuRelease=''
+export UbuntuInstallRelease=''
 export UbuntuDibase=''
-export UbuntuCompat='0'
+export UbuntuISOParam='iso-url'
 export UbuntuNetBootNet=''
 export UbuntuISOURL=''
 export UbuntuPWHASH=''
@@ -415,15 +417,11 @@ if [[ -n "$tmpDIST" ]]; then
       }
     }
     case "$DIST" in
-      noble)    UbuntuRelease='24.04';;
-      resolute) UbuntuRelease='26.04';;
+      noble)    UbuntuRelease='24.04'; UbuntuInstallRelease='24.04';;
+      resolute) UbuntuRelease='26.04'; UbuntuInstallRelease='26.04';;
+      jammy)    UbuntuIsoLoader='1';   UbuntuInstallRelease='22.04';;
     esac
     UbuntuDibase="$DIST"
-    if [[ "$DIST" == 'jammy' ]]; then
-      # Ubuntu 22.04 官方未发布 d-i netboot，改用 20.04(focal) 的安装器并指定 suite=jammy
-      UbuntuCompat='1'
-      UbuntuDibase='focal'
-    fi
     if [[ -n "$UbuntuRelease" ]]; then
       if [[ "$VER" == 'arm64' ]]; then
         echo -ne "\n\033[31mError! \033[0mUbuntu ${UbuntuRelease} netboot is not available for ARM64, please use amd64.\n\n";
@@ -433,6 +431,13 @@ if [[ -n "$tmpDIST" ]]; then
       # 24.04 起 Ubuntu 不再提供 d-i netboot，改用 live-server netboot + autoinstall
       UbuntuNetboot='1'
       LinuxMirror="https://releases.ubuntu.com/${UbuntuRelease}"
+    elif [[ "$UbuntuIsoLoader" == '1' ]]; then
+      # 22.04 官方没有 netboot，用其 live-server ISO 自带的内核/initrd 引导 autoinstall
+      if [[ "$VER" == 'arm64' ]]; then
+        echo -ne "\n\033[31mError! \033[0mUbuntu ${UbuntuInstallRelease} live-server ISO is not available for ARM64, please use amd64.\n\n";
+        bash $0 error;
+        exit 1;
+      fi
     else
       LinuxMirror=$(selectMirror "$Relese" "$UbuntuDibase" "$VER" "$tmpMirror")
     fi
@@ -456,7 +461,7 @@ if [[ -n "$tmpDIST" ]]; then
   fi
 fi
 
-if [[ -z "$LinuxMirror" ]]; then
+if [[ -z "$LinuxMirror" ]] && [[ "$UbuntuNetboot" != '1' ]] && [[ "$UbuntuIsoLoader" != '1' ]]; then
   echo -ne "\033[31mError! \033[0mInvaild mirror! \n"
   [ "$Relese" == 'Debian' ] && echo -en "\033[33mexample:\033[0m http://deb.debian.org/debian\n\n";
   [ "$Relese" == 'Ubuntu' ] && echo -en "\033[33mexample:\033[0m http://archive.ubuntu.com/ubuntu\n\n";
@@ -465,7 +470,7 @@ if [[ -z "$LinuxMirror" ]]; then
   exit 1;
 fi
 
-if [[ "$SpikCheckDIST" == '0' ]] && [[ "$UbuntuNetboot" != '1' ]]; then
+if [[ "$SpikCheckDIST" == '0' ]] && [[ "$UbuntuNetboot" != '1' ]] && [[ "$UbuntuIsoLoader" != '1' ]]; then
   # 直接探测 Release，兼容中科大等使用 JS 目录索引的镜像站
   wget --no-check-certificate --spider --timeout=10 "$LinuxMirror/dists/$DIST/Release" >/dev/null 2>&1
   [[ $? -ne '0' ]] && {
@@ -559,6 +564,67 @@ if [[ "$UbuntuNetboot" == '1' ]]; then
   fi
   UbuntuPWHASH="$(openssl passwd -6 "${tmpWORD:-cxthhhhh.com}" 2>/dev/null)"
   [[ -n "$UbuntuPWHASH" ]] || UbuntuPWHASH="$myPASSWORD"
+elif [[ "$UbuntuIsoLoader" == '1' ]]; then
+  dependence openssl;
+  # Ubuntu 22.04：官方没有 netboot，下载 live-server ISO 并取出其自带的 casper/vmlinuz、casper/initrd
+  if [[ "$CXTisCN" == 'Yes' ]]; then
+    UbuntuNetbootBases=("http://mirrors.ustc.edu.cn/ubuntu-releases/${UbuntuInstallRelease}" "http://releases.ubuntu.com/${UbuntuInstallRelease}")
+  else
+    UbuntuNetbootBases=("http://releases.ubuntu.com/${UbuntuInstallRelease}" "http://mirrors.ustc.edu.cn/ubuntu-releases/${UbuntuInstallRelease}")
+  fi
+  UbuntuISOURL=""
+  for UbuntuBase in "${UbuntuNetbootBases[@]}"; do
+    UbuntuISOName="$(wget --no-check-certificate -qO- "${UbuntuBase}/" | grep -oE "ubuntu-${UbuntuInstallRelease//./\\.}[0-9.]*-live-server-amd64\.iso" | sort -u | sort -V | tail -n1)"
+    [ -n "$UbuntuISOName" ] || continue
+    if wget --no-check-certificate --spider -q --timeout=10 "${UbuntuBase}/${UbuntuISOName}"; then
+      UbuntuISOURL="${UbuntuBase}/${UbuntuISOName}"
+      break
+    fi
+  done
+  if [[ -z "$UbuntuISOURL" ]]; then
+    echo -ne "\033[31mError! \033[0mCannot locate the Ubuntu ${UbuntuInstallRelease} live-server ISO. \n"
+    exit 1
+  fi
+  echo -e "ISO: ${UbuntuISOURL}"
+  UbuntuISOLocal="/var/tmp/ubuntu-${UbuntuInstallRelease}-live.iso"
+  echo -e "Downloading live-server ISO (about 2GB) to ${UbuntuISOLocal} ..."
+  if ! wget --no-check-certificate -O "$UbuntuISOLocal" "$UbuntuISOURL"; then
+    rm -f "$UbuntuISOLocal"
+    echo -ne "\033[31mError! \033[0mDownload live-server ISO failed. \n"
+    exit 1
+  fi
+  UbuntuISOMnt="/tmp/ubuntu-iso-mnt"
+  rm -rf "$UbuntuISOMnt"; mkdir -p "$UbuntuISOMnt"
+  if mount -o loop,ro "$UbuntuISOLocal" "$UbuntuISOMnt" 2>/dev/null; then
+    cp -f "$UbuntuISOMnt/casper/vmlinuz" /tmp/vmlinuz
+    cp -f "$UbuntuISOMnt/casper/initrd" /tmp/ubuntu-netboot-initrd
+    umount "$UbuntuISOMnt" 2>/dev/null
+  elif command -v 7z >/dev/null 2>&1; then
+    7z e -so "$UbuntuISOLocal" casper/vmlinuz > /tmp/vmlinuz
+    7z e -so "$UbuntuISOLocal" casper/initrd > /tmp/ubuntu-netboot-initrd
+  elif command -v bsdtar >/dev/null 2>&1; then
+    bsdtar -xOf "$UbuntuISOLocal" casper/vmlinuz > /tmp/vmlinuz
+    bsdtar -xOf "$UbuntuISOLocal" casper/initrd > /tmp/ubuntu-netboot-initrd
+  else
+    rm -rf "$UbuntuISOMnt" "$UbuntuISOLocal"
+    echo -ne "\033[31mError! \033[0mCannot extract casper files from ISO (loop mount, 7z and bsdtar are all unavailable). \n"
+    exit 1
+  fi
+  rm -rf "$UbuntuISOMnt" "$UbuntuISOLocal"
+  if [[ ! -s '/tmp/vmlinuz' ]] || [[ ! -s '/tmp/ubuntu-netboot-initrd' ]]; then
+    echo -ne "\033[31mError! \033[0mFailed to extract casper/vmlinuz or casper/initrd from ISO. \n"
+    exit 1
+  fi
+  UbuntuISOParam='url'
+  if [[ -n "$IPv4" ]] && [[ -n "$MASK" ]] && [[ -n "$GATE" ]]; then
+    UbuntuNetBootNet="ip=$IPv4::$GATE:$MASK::$interface:none:$ipDNS"
+    # 当前系统若使用传统 eth* 命名，安装器内核也需要关闭可预测网卡命名
+    [[ "$interface" == eth* ]] && UbuntuNetBootNet="$UbuntuNetBootNet net.ifnames=0 biosdevname=0"
+  else
+    UbuntuNetBootNet="ip=dhcp"
+  fi
+  UbuntuPWHASH="$(openssl passwd -6 "${tmpWORD:-cxthhhhh.com}" 2>/dev/null)"
+  [[ -n "$UbuntuPWHASH" ]] || UbuntuPWHASH="$myPASSWORD"
 elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
   CXTdibase="${UbuntuDibase:-$DIST}"
   [ "$CXTdibase" == "focal" ] && legacy="legacy-" || legacy=""
@@ -601,6 +667,7 @@ fi
 
 GrubName="$DIST"
 [[ "$UbuntuNetboot" == '1' ]] && GrubName="$UbuntuRelease"
+[[ "$UbuntuIsoLoader" == '1' ]] && GrubName="$UbuntuInstallRelease"
 
 [[ "$GRUBVER" == '0' ]] && {
   READGRUB='/tmp/grub.read'
@@ -661,8 +728,8 @@ if [[ "$loaderMode" == "0" ]]; then
 
   lowMem || Add_OPTION="$Add_OPTION lowmem=+0"
 
-  if [[ "$UbuntuNetboot" == '1' ]]; then
-    BOOT_OPTION="autoinstall $UbuntuNetBootNet $Add_OPTION iso-url=$UbuntuISOURL"
+  if [[ "$UbuntuNetboot" == '1' ]] || [[ "$UbuntuIsoLoader" == '1' ]]; then
+    BOOT_OPTION="autoinstall $UbuntuNetBootNet $Add_OPTION ${UbuntuISOParam}=$UbuntuISOURL"
     [ -n "$setConsole" ] && BOOT_OPTION="$BOOT_OPTION console=$setConsole"
     BOOT_OPTION="$BOOT_OPTION ---"
   elif [[ "$linux_relese" == 'debian' ]] || [[ "$linux_relese" == 'ubuntu' ]]; then
@@ -671,7 +738,7 @@ if [[ "$loaderMode" == "0" ]]; then
     BOOT_OPTION="ks=file://ks.cfg $Add_OPTION ksdevice=$interfaceSelect"
   fi
 
-  [ -n "$setConsole" ] && [[ "$UbuntuNetboot" != '1' ]] && BOOT_OPTION="$BOOT_OPTION --- console=$setConsole"
+  [ -n "$setConsole" ] && [[ "$UbuntuNetboot" != '1' ]] && [[ "$UbuntuIsoLoader" != '1' ]] && BOOT_OPTION="$BOOT_OPTION --- console=$setConsole"
 
   [[ "$Type" == 'InBoot' ]] && {
     sed -i "/$LinuxKernel.*\//c\\\t$LinuxKernel\\t\/boot\/vmlinuz $BOOT_OPTION" /tmp/grub.new;
@@ -690,8 +757,8 @@ if [[ "$loaderMode" == "0" ]]; then
   [[ -f  $GRUBDIR/grubenv ]] && sed -i 's/saved_entry/#saved_entry/g' $GRUBDIR/grubenv;
 fi
 
-if [[ "$UbuntuNetboot" == '1' ]]; then
-  # Ubuntu 24.04+ 使用 live-server netboot：在 initrd 末尾追加 autoinstall 配置，
+if [[ "$UbuntuNetboot" == '1' ]] || [[ "$UbuntuIsoLoader" == '1' ]]; then
+  # Ubuntu 24.04+ 使用 live-server netboot；22.04 使用 ISO 自带 casper：都在 initrd 前追加 autoinstall 配置，
   # 并由 casper-bottom 的 param.conf 钩子把 /autoinstall.yaml 复制进安装系统根目录
   UbuntuOverlay="/tmp/ubuntu-autoinstall"
   rm -rf "$UbuntuOverlay"; mkdir -p "$UbuntuOverlay/etc" "$UbuntuOverlay/conf"
