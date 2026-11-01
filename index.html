@@ -16,6 +16,7 @@
             --muted: #5c667e;
             --primary: #4f46e5;
             --primary-hover: #4338ca;
+            --link: #4f46e5;
             --accent: #ff5722;
             --accent-hover: #e64a19;
             --code-bg: #1b2133;
@@ -33,6 +34,7 @@
                 --border: #28304a;
                 --text: #e8ecf7;
                 --muted: #9aa5bd;
+                --link: #a5b4fc;
                 --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
                 --shadow-hover: 0 4px 10px rgba(0, 0, 0, .4), 0 18px 40px rgba(0, 0, 0, .45);
             }
@@ -44,6 +46,9 @@
 
         body {
             margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             background: var(--bg);
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", Roboto, Helvetica, Arial, sans-serif;
@@ -51,7 +56,9 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        a { color: var(--primary); }
+        a { color: var(--link); }
+
+        main { flex: 1 0 auto; }
 
         .wrap {
             width: 100%;
@@ -143,7 +150,7 @@
             padding: 4px 12px;
             border-radius: 999px;
             background: rgba(79, 70, 229, .1);
-            color: var(--primary);
+            color: var(--link);
             font-size: .78rem;
             font-weight: 600;
             letter-spacing: .4px;
@@ -226,54 +233,75 @@
             letter-spacing: .3px;
         }
 
+        .tag-accent {
+            background: rgba(255, 87, 34, .1);
+            border-color: rgba(255, 87, 34, .28);
+            color: #f4511e;
+        }
+
         /* ---------- 命令块 ---------- */
         .code-block {
-            position: relative;
             margin: 0;
             border-radius: 12px;
             background: var(--code-bg);
+            border: 1px solid rgba(255, 255, 255, .06);
             overflow: hidden;
+        }
+
+        .code-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 6px 8px 6px 14px;
+            background: rgba(255, 255, 255, .035);
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .code-file {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: #7f8bb0;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: .73rem;
+            letter-spacing: .3px;
         }
 
         .code-block pre {
             margin: 0;
-            padding: 16px 92px 16px 18px;
-            overflow-x: auto;
+            padding: 14px 16px 16px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-            font-size: .86rem;
-            line-height: 1.7;
+            font-size: .84rem;
+            line-height: 1.75;
             color: var(--code-text);
         }
 
-        .code-block code { white-space: pre; }
+        .code-block code { white-space: inherit; }
 
         .copy-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+            flex: none;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 12px;
-            border: 1px solid rgba(255, 255, 255, .16);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, .08);
-            color: #d7dcf0;
+            padding: 4px 9px;
+            border: 0;
+            border-radius: 7px;
+            background: transparent;
+            color: #9aa6c9;
             font: inherit;
-            font-size: .78rem;
+            font-size: .76rem;
             cursor: pointer;
-            transition: background-color .18s, color .18s, border-color .18s;
+            transition: background-color .18s, color .18s;
         }
 
-        .copy-btn:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+        .copy-btn:hover { background: rgba(255, 255, 255, .1); color: #fff; }
 
-        .copy-btn.is-done {
-            border-color: rgba(74, 222, 128, .5);
-            background: rgba(34, 197, 94, .18);
-            color: #86efac;
-        }
+        .copy-btn.is-done { background: rgba(34, 197, 94, .16); color: #86efac; }
 
-        .copy-btn:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
+        .copy-btn:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 1px; }
 
         .code-label {
             margin: 22px 0 10px;
@@ -291,12 +319,22 @@
         .links-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px 18px;
+            align-items: center;
+            gap: 8px 14px;
             margin-top: 18px;
             padding-top: 16px;
             border-top: 1px dashed var(--border);
             font-size: .9rem;
+            color: var(--muted);
         }
+
+        .links-row a {
+            color: var(--link);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .links-row a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
         /* ---------- 网格 ---------- */
         .grid {
@@ -414,7 +452,7 @@
         }
 
         .footer-inner a { color: var(--muted); text-decoration: none; }
-        .footer-inner a:hover { color: var(--primary); }
+        .footer-inner a:hover { color: var(--link); }
 
         .footer-links { display: flex; gap: 18px; }
 
@@ -425,8 +463,8 @@
             .section { padding-top: 36px; }
             .card { padding: 20px; }
             .grid { grid-template-columns: 1fr; gap: 16px; }
-            .code-block pre { padding: 14px 14px 46px; font-size: .8rem; }
-            .copy-btn { top: auto; bottom: 10px; right: 10px; }
+            .code-block pre { padding: 12px 14px 14px; font-size: .8rem; }
+            .code-bar { padding-left: 12px; }
             .site-nav a { padding: 6px 9px; font-size: .86rem; }
             .brand span:not(.brand-mark) { display: none; }
         }
@@ -479,8 +517,11 @@
                     </div>
                     <p>一键下载并安装 AnyDesk 远程控制软件。</p>
                     <div class="code-block">
+                        <div class="code-bar">
+                            <span class="code-file">anydesk.sh</span>
+                            <button class="copy-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>复制</span></button>
+                        </div>
                         <pre><code>curl -O https://linuxcts.itgpt.top/os/apt/anydesk.sh || wget -O ${_##*/} $_ && bash anydesk.sh && rm -fr anydesk.sh</code></pre>
-                        <button class="copy-btn" type="button">复制</button>
                     </div>
                 </article>
 
@@ -491,35 +532,47 @@
                     </div>
                     <p>安装 / 卸载二合一，自动获取远程端口。</p>
                     <div class="code-block">
+                        <div class="code-bar">
+                            <span class="code-file">frpc-ssh.sh</span>
+                            <button class="copy-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>复制</span></button>
+                        </div>
                         <pre><code>curl -O https://linuxcts.itgpt.top/os/all/frpc-ssh.sh || wget -O ${_##*/} $_ && bash frpc-ssh.sh && rm -fr frpc-ssh.sh</code></pre>
-                        <button class="copy-btn" type="button">复制</button>
                     </div>
                 </article>
 
                 <article class="card span-all">
                     <div class="card-head">
                         <h3>LinuxCTS 综合测试脚本</h3>
-                        <span class="tag">推荐</span>
+                        <span class="tag tag-accent">推荐</span>
                     </div>
                     <p>系统信息、性能测试、网络检测、服务状态检查以及常用安装脚本合集。既支持临时运行，也可以安装到系统里长期使用。</p>
 
                     <p class="code-label">方式一 · 一键运行（临时使用，不落盘）</p>
                     <div class="code-block">
+                        <div class="code-bar">
+                            <span class="code-file">linux.sh</span>
+                            <button class="copy-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>复制</span></button>
+                        </div>
                         <pre><code>source &lt;(curl -sL https://linuxcts.itgpt.top/linux.sh)</code></pre>
-                        <button class="copy-btn" type="button">复制</button>
                     </div>
 
                     <p class="code-label">方式二 · 安装到系统</p>
                     <div class="code-block">
+                        <div class="code-bar">
+                            <span class="code-file">linux.sh</span>
+                            <button class="copy-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>复制</span></button>
+                        </div>
                         <pre><code>sudo curl -L https://linuxcts.itgpt.top/linux.sh -o /usr/bin/linux &amp;&amp; sudo chmod +x /usr/bin/linux</code></pre>
-                        <button class="copy-btn" type="button">复制</button>
                     </div>
                     <p class="card-note">安装完成后，在终端输入 <strong>linux</strong> 即可打开功能菜单；需要更新时重新执行上面这条命令覆盖即可。</p>
 
                     <p class="code-label">卸载</p>
                     <div class="code-block">
+                        <div class="code-bar">
+                            <span class="code-file">terminal</span>
+                            <button class="copy-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>复制</span></button>
+                        </div>
                         <pre><code>sudo rm -rf /usr/bin/linux</code></pre>
-                        <button class="copy-btn" type="button">复制</button>
                     </div>
 
                     <div class="links-row">
@@ -620,7 +673,8 @@
             }
 
             document.querySelectorAll('.copy-btn').forEach(function (btn) {
-                var original = btn.textContent;
+                var label = btn.querySelector('span');
+                var original = label.textContent;
                 var timer = null;
 
                 btn.addEventListener('click', function () {
@@ -629,14 +683,14 @@
                     if (!code) return;
 
                     copyText(code.textContent.trim()).then(function () {
-                        btn.textContent = '已复制';
+                        label.textContent = '已复制';
                         btn.classList.add('is-done');
                     }).catch(function () {
-                        btn.textContent = '复制失败';
+                        label.textContent = '复制失败';
                     }).finally(function () {
                         clearTimeout(timer);
                         timer = setTimeout(function () {
-                            btn.textContent = original;
+                            label.textContent = original;
                             btn.classList.remove('is-done');
                         }, 1600);
                     });
