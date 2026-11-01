@@ -3,103 +3,647 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ITGPT - 双系统安装工具站</title>
+    <meta name="description" content="LinuxCTS 双系统安装工具箱：一键脚本、启动盘制作、磁盘工具与系统镜像下载。">
+    <meta name="theme-color" content="#4f46e5">
+    <title>LinuxCTS - 双系统安装工具箱</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 20px; background: #eceff1; }
-        .card { background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        h1 { color: #1a237e; border-left: 5px solid #3f51b5; padding-left: 15px; margin-bottom: 30px; }
-        h2 { color: #3949ab; font-size: 1.3em; margin-top: 0; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .tool-item { border: 1px solid #e0e0e0; padding: 15px; border-radius: 10px; transition: 0.3s; text-align: center; }
-        .tool-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .btn { display: inline-block; width: 80%; padding: 10px; margin-top: 10px; background: #3f51b5; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; }
-        .btn:hover { background: #303f9f; }
-        .btn.ventoy { background: #ff5722; }
-        .btn.ventoy:hover { background: #e64a19; }
-        code { background: #263238; color: #81c784; padding: 20px; border-radius: 8px; display: block; overflow-x: auto; margin: 20px 0; font-family: 'Consolas', monospace; position: relative; }
-        .copy-hint { color: #90a4ae; font-size: 0.8em; margin-top: -15px; margin-bottom: 20px; }
-        .footer { text-align: center; padding: 20px; color: #78909c; font-size: 0.9em; }
+        :root {
+            --bg: #f3f5fb;
+            --surface: #ffffff;
+            --surface-soft: #f7f8fc;
+            --border: #e4e8f1;
+            --text: #1a1f36;
+            --muted: #5c667e;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --accent: #ff5722;
+            --accent-hover: #e64a19;
+            --code-bg: #1b2133;
+            --code-text: #a5f3c0;
+            --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 10px 30px rgba(16, 24, 40, .06);
+            --shadow-hover: 0 4px 10px rgba(16, 24, 40, .06), 0 18px 40px rgba(16, 24, 40, .1);
+            --radius: 16px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0d1120;
+                --surface: #161b2c;
+                --surface-soft: #1d2337;
+                --border: #28304a;
+                --text: #e8ecf7;
+                --muted: #9aa5bd;
+                --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
+                --shadow-hover: 0 4px 10px rgba(0, 0, 0, .4), 0 18px 40px rgba(0, 0, 0, .45);
+            }
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.65;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { color: var(--primary); }
+
+        .wrap {
+            width: 100%;
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ---------- 顶栏 ---------- */
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(243, 245, 251, .82);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .site-header { background: rgba(13, 17, 32, .82); }
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            height: 60px;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 700;
+            letter-spacing: .2px;
+        }
+
+        .brand-mark {
+            display: inline-grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .5px;
+        }
+
+        .site-nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .site-nav a {
+            padding: 7px 12px;
+            border-radius: 9px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .92rem;
+            font-weight: 500;
+            transition: background-color .2s, color .2s;
+        }
+
+        .site-nav a:hover { background: var(--surface-soft); color: var(--text); }
+
+        /* ---------- 首屏 ---------- */
+        .hero {
+            margin: 36px 0 8px;
+            padding: 44px 40px;
+            border-radius: 22px;
+            background:
+                radial-gradient(1000px 320px at 88% -20%, rgba(99, 102, 241, .22), transparent 70%),
+                radial-gradient(700px 260px at 0% 120%, rgba(255, 87, 34, .14), transparent 70%),
+                var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .eyebrow {
+            display: inline-block;
+            margin-bottom: 14px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            background: rgba(79, 70, 229, .1);
+            color: var(--primary);
+            font-size: .78rem;
+            font-weight: 600;
+            letter-spacing: .4px;
+        }
+
+        .hero h1 {
+            margin: 0 0 12px;
+            font-size: clamp(1.7rem, 4vw, 2.4rem);
+            line-height: 1.25;
+            letter-spacing: -.4px;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 46em;
+            color: var(--muted);
+            font-size: 1.02rem;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 26px;
+        }
+
+        /* ---------- 区块 ---------- */
+        .section { padding-top: 48px; scroll-margin-top: 76px; }
+
+        .section-head { margin-bottom: 20px; }
+
+        .section-head h2 {
+            margin: 0 0 6px;
+            font-size: 1.45rem;
+            letter-spacing: -.2px;
+        }
+
+        .section-head p {
+            margin: 0;
+            color: var(--muted);
+            font-size: .95rem;
+        }
+
+        /* ---------- 卡片 ---------- */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h3 {
+            margin: 0 0 6px;
+            font-size: 1.08rem;
+            letter-spacing: -.1px;
+        }
+
+        .card > p { margin: 0 0 14px; color: var(--muted); font-size: .94rem; }
+
+        .card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .card-head h3 { margin: 0; }
+
+        .tag {
+            flex: none;
+            padding: 2px 10px;
+            border-radius: 999px;
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: .74rem;
+            font-weight: 600;
+            letter-spacing: .3px;
+        }
+
+        /* ---------- 命令块 ---------- */
+        .code-block {
+            position: relative;
+            margin: 0;
+            border-radius: 12px;
+            background: var(--code-bg);
+            overflow: hidden;
+        }
+
+        .code-block pre {
+            margin: 0;
+            padding: 16px 92px 16px 18px;
+            overflow-x: auto;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: .86rem;
+            line-height: 1.7;
+            color: var(--code-text);
+        }
+
+        .code-block code { white-space: pre; }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .08);
+            color: #d7dcf0;
+            font: inherit;
+            font-size: .78rem;
+            cursor: pointer;
+            transition: background-color .18s, color .18s, border-color .18s;
+        }
+
+        .copy-btn:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+
+        .copy-btn.is-done {
+            border-color: rgba(74, 222, 128, .5);
+            background: rgba(34, 197, 94, .18);
+            color: #86efac;
+        }
+
+        .copy-btn:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
+
+        .code-label {
+            margin: 22px 0 10px;
+            color: var(--text);
+            font-size: .9rem;
+            font-weight: 600;
+        }
+
+        .card-note {
+            margin: 14px 0 0;
+            color: var(--muted);
+            font-size: .88rem;
+        }
+
+        .links-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--border);
+            font-size: .9rem;
+        }
+
+        /* ---------- 网格 ---------- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .grid .span-all { grid-column: 1 / -1; }
+
+        /* ---------- 安装步骤 ---------- */
+        .step { margin-bottom: 20px; }
+
+        .step-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .step-num {
+            display: inline-grid;
+            place-items: center;
+            width: 28px;
+            height: 28px;
+            flex: none;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            font-size: .85rem;
+            font-weight: 700;
+        }
+
+        .step-head h3 { margin: 0; font-size: 1.08rem; }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 16px;
+        }
+
+        .tool {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .tool:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(79, 70, 229, .35);
+        }
+
+        .tool h4 { margin: 0 0 6px; font-size: 1rem; }
+
+        .tool p {
+            margin: 0 0 18px;
+            color: var(--muted);
+            font-size: .88rem;
+            flex: 1;
+        }
+
+        /* ---------- 按钮 ---------- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 10px;
+            background: var(--primary);
+            color: #fff;
+            text-decoration: none;
+            font-size: .92rem;
+            font-weight: 600;
+            transition: background-color .2s, transform .1s;
+        }
+
+        .btn:hover { background: var(--primary-hover); }
+        .btn:active { transform: translateY(1px); }
+
+        .btn-accent { background: var(--accent); }
+        .btn-accent:hover { background: var(--accent-hover); }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover { background: var(--surface-soft); }
+
+        .tool .btn { width: 100%; padding: 9px 14px; }
+
+        /* ---------- 页脚 ---------- */
+        .site-footer {
+            margin-top: 56px;
+            padding: 28px 0 40px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: .88rem;
+        }
+
+        .footer-inner {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .footer-inner a { color: var(--muted); text-decoration: none; }
+        .footer-inner a:hover { color: var(--primary); }
+
+        .footer-links { display: flex; gap: 18px; }
+
+        /* ---------- 响应式 ---------- */
+        @media (max-width: 720px) {
+            .wrap { padding: 0 16px; }
+            .hero { margin-top: 20px; padding: 30px 22px; border-radius: 18px; }
+            .section { padding-top: 36px; }
+            .card { padding: 20px; }
+            .grid { grid-template-columns: 1fr; gap: 16px; }
+            .code-block pre { padding: 14px 14px 46px; font-size: .8rem; }
+            .copy-btn { top: auto; bottom: 10px; right: 10px; }
+            .site-nav a { padding: 6px 9px; font-size: .86rem; }
+            .brand span:not(.brand-mark) { display: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { transition: none !important; animation: none !important; }
+        }
     </style>
 </head>
-<body>
-    
+<body id="top">
 
-    <div class="card">
-        <h1>双系统安装必备工具箱</h1>
-        <p>由 <strong>linuxcts.itgpt.top</strong> 提供的自动化部署与系统安装支持。请按照顺序下载工具并操作。</p>
-    </div>
-
-    <div class="card">
-        <h1>Ubuntu 安装远程控制软件</h1>
-        <p>一键下载安装 anydesk远程控制脚本：</p>
-        <code>curl -O https://linuxcts.itgpt.top/os/apt/anydesk.sh || wget -O ${_##*/} $_ && bash anydesk.sh && rm -fr anydesk.sh</code>
-    </div>
-
-    <div class="card">
-        <h1>Ubuntu 安装内网穿透SSH工具</h1>
-        <p>一键下载安装 内网穿透ssh工具（安装 / 卸载 二合一，自动获取远程端口）：</p>
-        <code>curl -O https://linuxcts.itgpt.top/os/all/frpc-ssh.sh || wget -O ${_##*/} $_ && bash frpc-ssh.sh && rm -fr frpc-ssh.sh</code>
-    </div>
-
-    <div class="card">
-        <h1>LinuxCTS 综合测试脚本</h1>
-        <p>Linux 系统综合测试与运维脚本合集：系统信息、性能测试、网络检测、服务状态检查以及常用安装脚本。支持一键临时运行，也可以安装到系统里长期使用。</p>
-
-        <h2 style="margin-top: 24px;">方式一：一键运行（临时使用，不落盘）</h2>
-        <code>source &lt;(curl -sL https://linuxcts.itgpt.top/linux.sh)</code>
-
-        <h2 style="margin-top: 24px;">方式二：安装到系统</h2>
-        <code>sudo curl -L https://linuxcts.itgpt.top/linux.sh -o /usr/bin/linux && sudo chmod +x /usr/bin/linux</code>
-        <p>安装完成后，在终端输入 <strong>linux</strong> 即可打开功能菜单；需要更新时重新执行上面这条命令覆盖即可。</p>
-
-        <h2 style="margin-top: 24px;">卸载</h2>
-        <code>sudo rm -rf /usr/bin/linux</code>
-
-        <p>项目主页：<a href="https://github.com/muaimingjun/LinuxCTS" target="_blank">GitHub</a> · <a href="https://gitee.com/muaimingjun/LinuxCTS" target="_blank">Gitee</a>（国内访问建议用 Gitee）</p>
-    </div>
-
-    <div class="card">
-        <h2>第一步：制作启动盘 (推荐)</h2>
-        <div class="grid">
-            <div class="tool-item">
-                <h3>Ventoy 启动盘工具</h3>
-                <p>支持一次拷贝多个 ISO，南大高速镜像。</p>
-                <a href="https://cdn.wanwuhuanxin.cn/app/ventoy-1.1.10-windows.zip" class="btn ventoy" target="_blank">获取 Ventoy</a>
-            </div>
-            <div class="tool-item">
-                <h3>Ubuntu 系统镜像</h3>
-                <p>中科大源，极速下载最新稳定版。</p>
-                <a href="https://mirrors.ustc.edu.cn/ubuntu-releases/" class="btn" target="_blank">获取 Ubuntu</a>
-            </div>
+    <header class="site-header">
+        <div class="wrap header-inner">
+            <a class="brand" href="#top">
+                <span class="brand-mark">CTS</span>
+                <span>LinuxCTS</span>
+            </a>
+            <nav class="site-nav">
+                <a href="#scripts">快捷脚本</a>
+                <a href="#install">安装流程</a>
+                <a href="#footer">关于</a>
+            </nav>
         </div>
-    </div>
+    </header>
 
-    <div class="card">
-        <h2>第二步：磁盘与软件配套</h2>
-        <div class="grid">
-            <div class="tool-item">
-                <h3>DiskGenius</h3>
-                <p>专业的磁盘分区与无损扩容工具。</p>
-                <a href="https://cdn.wanwuhuanxin.cn/app/Diskgenius_Pro_x86_5.5.0.1488_cn.exe" class="btn" target="_blank">下载 DG</a>
+    <main class="wrap">
+
+        <section class="hero">
+            <span class="eyebrow">支持与分发中心 · linuxcts.itgpt.top</span>
+            <h1>双系统安装必备工具箱</h1>
+            <p>从启动盘制作到远程运维，所有双系统装机工具与一键脚本都在这里。命令可直接复制，按页面顺序操作即可。</p>
+            <div class="hero-actions">
+                <a class="btn" href="#scripts">查看一键脚本</a>
+                <a class="btn btn-ghost" href="#install">开始安装流程</a>
             </div>
-            <div class="tool-item">
-                <h3>全能软件合集</h3>
-                <p>包含双系统常用必备应用插件。</p>
-                <a href="https://www.123865.com/s/9yDSVv-Yh2sv" class="btn" target="_blank">进入合集</a>
+        </section>
+
+        <section class="section" id="scripts">
+            <div class="section-head">
+                <h2>快捷脚本</h2>
+                <p>在 Ubuntu 终端中粘贴执行，自动下载、安装并清理安装包。</p>
             </div>
-            <div class="tool-item">
-                <h3>教程与文档</h3>
-                <p>教程与文档</p>
-                <a href="https://oqkx1gsk1t6.feishu.cn/docx/SUSodBQreoRuirxQR6rcwoawnBb?from=from_copylink" class="btn" target="_blank">进入文档</a>
+
+            <div class="grid">
+                <article class="card">
+                    <div class="card-head">
+                        <h3>远程控制</h3>
+                        <span class="tag">AnyDesk</span>
+                    </div>
+                    <p>一键下载并安装 AnyDesk 远程控制软件。</p>
+                    <div class="code-block">
+                        <pre><code>curl -O https://linuxcts.itgpt.top/os/apt/anydesk.sh || wget -O ${_##*/} $_ && bash anydesk.sh && rm -fr anydesk.sh</code></pre>
+                        <button class="copy-btn" type="button">复制</button>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="card-head">
+                        <h3>内网穿透 SSH</h3>
+                        <span class="tag">frpc</span>
+                    </div>
+                    <p>安装 / 卸载二合一，自动获取远程端口。</p>
+                    <div class="code-block">
+                        <pre><code>curl -O https://linuxcts.itgpt.top/os/all/frpc-ssh.sh || wget -O ${_##*/} $_ && bash frpc-ssh.sh && rm -fr frpc-ssh.sh</code></pre>
+                        <button class="copy-btn" type="button">复制</button>
+                    </div>
+                </article>
+
+                <article class="card span-all">
+                    <div class="card-head">
+                        <h3>LinuxCTS 综合测试脚本</h3>
+                        <span class="tag">推荐</span>
+                    </div>
+                    <p>系统信息、性能测试、网络检测、服务状态检查以及常用安装脚本合集。既支持临时运行，也可以安装到系统里长期使用。</p>
+
+                    <p class="code-label">方式一 · 一键运行（临时使用，不落盘）</p>
+                    <div class="code-block">
+                        <pre><code>source &lt;(curl -sL https://linuxcts.itgpt.top/linux.sh)</code></pre>
+                        <button class="copy-btn" type="button">复制</button>
+                    </div>
+
+                    <p class="code-label">方式二 · 安装到系统</p>
+                    <div class="code-block">
+                        <pre><code>sudo curl -L https://linuxcts.itgpt.top/linux.sh -o /usr/bin/linux &amp;&amp; sudo chmod +x /usr/bin/linux</code></pre>
+                        <button class="copy-btn" type="button">复制</button>
+                    </div>
+                    <p class="card-note">安装完成后，在终端输入 <strong>linux</strong> 即可打开功能菜单；需要更新时重新执行上面这条命令覆盖即可。</p>
+
+                    <p class="code-label">卸载</p>
+                    <div class="code-block">
+                        <pre><code>sudo rm -rf /usr/bin/linux</code></pre>
+                        <button class="copy-btn" type="button">复制</button>
+                    </div>
+
+                    <div class="links-row">
+                        <span>项目主页：</span>
+                        <a href="https://github.com/muaimingjun/LinuxCTS" target="_blank" rel="noopener">GitHub</a>
+                        <a href="https://gitee.com/muaimingjun/LinuxCTS" target="_blank" rel="noopener">Gitee（国内推荐）</a>
+                    </div>
+                </article>
             </div>
+        </section>
+
+        <section class="section" id="install">
+            <div class="section-head">
+                <h2>双系统安装流程</h2>
+                <p>先做准备工具，再处理磁盘分区，最后按教程安装系统。</p>
+            </div>
+
+            <div class="step">
+                <div class="step-head">
+                    <span class="step-num">1</span>
+                    <h3>制作启动盘</h3>
+                </div>
+                <div class="tool-grid">
+                    <article class="tool">
+                        <h4>Ventoy 启动盘工具</h4>
+                        <p>支持一次拷贝多个 ISO，南大高速镜像。</p>
+                        <a href="https://cdn.wanwuhuanxin.cn/app/ventoy-1.1.10-windows.zip" class="btn btn-accent" target="_blank" rel="noopener">获取 Ventoy</a>
+                    </article>
+                    <article class="tool">
+                        <h4>Ubuntu 系统镜像</h4>
+                        <p>中科大源，极速下载最新稳定版。</p>
+                        <a href="https://mirrors.ustc.edu.cn/ubuntu-releases/" class="btn" target="_blank" rel="noopener">获取 Ubuntu</a>
+                    </article>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-head">
+                    <span class="step-num">2</span>
+                    <h3>磁盘与软件配套</h3>
+                </div>
+                <div class="tool-grid">
+                    <article class="tool">
+                        <h4>DiskGenius</h4>
+                        <p>专业的磁盘分区与无损扩容工具。</p>
+                        <a href="https://cdn.wanwuhuanxin.cn/app/Diskgenius_Pro_x86_5.5.0.1488_cn.exe" class="btn" target="_blank" rel="noopener">下载 DG</a>
+                    </article>
+                    <article class="tool">
+                        <h4>全能软件合集</h4>
+                        <p>包含双系统常用必备应用插件。</p>
+                        <a href="https://www.123865.com/s/9yDSVv-Yh2sv" class="btn" target="_blank" rel="noopener">进入合集</a>
+                    </article>
+                    <article class="tool">
+                        <h4>教程与文档</h4>
+                        <p>图文步骤说明，遇到问题先查这里。</p>
+                        <a href="https://oqkx1gsk1t6.feishu.cn/docx/SUSodBQreoRuirxQR6rcwoawnBb?from=from_copylink" class="btn" target="_blank" rel="noopener">进入文档</a>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="site-footer" id="footer">
+        <div class="wrap footer-inner">
+            <span>© 2026 ITGPT.TOP · 技术支持与分发中心</span>
+            <span class="footer-links">
+                <a href="https://github.com/muaimingjun/LinuxCTS" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://gitee.com/muaimingjun/LinuxCTS" target="_blank" rel="noopener">Gitee</a>
+                <a href="/readme.html">项目说明</a>
+            </span>
         </div>
-    </div>
+    </footer>
 
-    
+    <script>
+        (function () {
+            function copyText(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(text);
+                }
+                // 非 HTTPS 环境的兜底方案
+                return new Promise(function (resolve, reject) {
+                    var ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.setAttribute('readonly', '');
+                    ta.style.position = 'fixed';
+                    ta.style.top = '-1000px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try {
+                        document.execCommand('copy') ? resolve() : reject(new Error('copy failed'));
+                    } catch (e) {
+                        reject(e);
+                    } finally {
+                        document.body.removeChild(ta);
+                    }
+                });
+            }
 
-    <div class="footer">
-        © 2026 ITGPT.TOP | 技术支持与分发中心
-    </div>
+            document.querySelectorAll('.copy-btn').forEach(function (btn) {
+                var original = btn.textContent;
+                var timer = null;
+
+                btn.addEventListener('click', function () {
+                    var block = btn.closest('.code-block');
+                    var code = block && block.querySelector('code');
+                    if (!code) return;
+
+                    copyText(code.textContent.trim()).then(function () {
+                        btn.textContent = '已复制';
+                        btn.classList.add('is-done');
+                    }).catch(function () {
+                        btn.textContent = '复制失败';
+                    }).finally(function () {
+                        clearTimeout(timer);
+                        timer = setTimeout(function () {
+                            btn.textContent = original;
+                            btn.classList.remove('is-done');
+                        }, 1600);
+                    });
+                });
+            });
+        })();
+    </script>
 
 </body>
 </html>
