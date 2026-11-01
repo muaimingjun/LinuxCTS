@@ -92,16 +92,27 @@ case $OS_TYPE in
     ubuntu|debian)
         echo -e "${GreenBG}正在进行换中科大镜像源....${Font}"
         sleep 1
-        if [ "$(uname -m)" != "x86_64" ]; then
+        if [ "$OS_TYPE" == "ubuntu" ] && [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+            # Ubuntu 24.04 及以后使用 deb822 格式的 ubuntu.sources
+            sed -ri -e "s@https?://ports\.ubuntu\.com@${PROTOCOL}://mirrors.ustc.edu.cn@g" \
+                -e "s@https?://[^/ ]*ubuntu\.com/ubuntu/?@${PROTOCOL}://mirrors.ustc.edu.cn/ubuntu/@g" \
+                /etc/apt/sources.list.d/ubuntu.sources
+            judge "更新配置文件"
+            if [ -f /etc/apt/sources.list ]; then
+                sed -ri -e "s@https?://ports\.ubuntu\.com@${PROTOCOL}://mirrors.ustc.edu.cn@g" \
+                    -e "s@https?://[^/ ]*ubuntu\.com/ubuntu/?@${PROTOCOL}://mirrors.ustc.edu.cn/ubuntu/@g" \
+                    /etc/apt/sources.list
+            fi
+        elif [ "$(uname -m)" != "x86_64" ]; then
             if [ $OS_TYPE == "ubuntu" ] && [ $VERSION_ID == "24.04" ]; then
                 sed -i 's@//ports.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list.d/ubuntu.sources
-            else 
+            else
                 sed -i -e 's@//ports.ubuntu.com/\? @//ports.ubuntu.com/ubuntu-ports @g' -e 's@//ports.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list
             fi
         else
             URL="${PROTOCOL}://mirrors.ustc.edu.cn/repogen/conf/${ID}-${PROTOCOL}-${IP_VERSION/*v/}-${VERSION_CODENAME}"
             CONFIG_FILE="/etc/apt/sources.list"
-            download_source_list      
+            download_source_list
         fi
         ;;
     arch)

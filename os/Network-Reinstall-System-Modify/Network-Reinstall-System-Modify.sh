@@ -115,6 +115,7 @@ if [[ "$CXTmyipapi" != "" ]];then
   CXTisCN="Yes"
 fi
 export CXTisCN
+export CXTrepoCN CXTrepoGlobal
 
 if [ "$CXTisCN" != "Yes" ];then
     echo -e "${CXT_C}Core Download（Global）...${CXT_N}"

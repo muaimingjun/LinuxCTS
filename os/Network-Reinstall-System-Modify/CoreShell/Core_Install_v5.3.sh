@@ -767,6 +767,14 @@ if [[ "$UbuntuNetboot" == '1' ]] || [[ "$UbuntuIsoLoader" == '1' ]]; then
   UbuntuISOHost="${UbuntuISOURL#*://}"; UbuntuISOHost="${UbuntuISOHost%%/*}"
   UbuntuISOIP="$(getent ahostsv4 "$UbuntuISOHost" 2>/dev/null | awk 'NR==1{print $1}')"
   [ -n "$UbuntuISOIP" ] && echo "$UbuntuISOIP $UbuntuISOHost" > "$UbuntuOverlay/etc/hosts"
+  # 24.04/26.04：下载 LinuxCTS 的换源脚本，安装完成后在目标系统里执行
+  CXTmirrorScript='0'
+  if [[ "$UbuntuNetboot" == '1' ]] && [[ "$CXTisCN" == 'Yes' ]]; then
+    for CXTmURL in "${CXTrepoCN}/os/apt/ustc-mirror.sh" "${CXTrepoGlobal}/os/apt/ustc-mirror.sh"; do
+      [ -n "$CXTmURL" ] || continue
+      wget --no-check-certificate -qO "$UbuntuOverlay/ustc-mirror.sh" "$CXTmURL" && [ -s "$UbuntuOverlay/ustc-mirror.sh" ] && CXTmirrorScript='1' && break
+    done
+  fi
   cat > "$UbuntuOverlay/autoinstall.yaml" <<UBEOF
 #cloud-config
 autoinstall:
@@ -818,12 +826,20 @@ UBEOF
   fi
   if [[ "$UbuntuNetboot" == '1' ]] && [[ "$CXTisCN" == 'Yes' ]]; then
     # 安装完成后把目标系统的 apt 源切换到中科大
-    cat >> "$UbuntuOverlay/autoinstall.yaml" <<UBEOF
+    if [[ "$CXTmirrorScript" == '1' ]]; then
+      cat >> "$UbuntuOverlay/autoinstall.yaml" <<UBEOF
+    - bash -c "cp /ustc-mirror.sh /target/tmp/ustc-mirror.sh || true"
+    - curtin in-target -- bash -c "bash /tmp/ustc-mirror.sh --protocol https || true"
+UBEOF
+    else
+      cat >> "$UbuntuOverlay/autoinstall.yaml" <<UBEOF
     - curtin in-target -- bash -c "sed -ri 's|https?://[^/ ]*ubuntu\.com/ubuntu/?|https://mirrors.ustc.edu.cn/ubuntu/|g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list 2>/dev/null || true"
 UBEOF
+    fi
   fi
   cat > "$UbuntuOverlay/conf/param.conf" <<'UBEOF'
 [ -f /autoinstall.yaml ] && cp -f /autoinstall.yaml /root/autoinstall.yaml 2>/dev/null || true
+[ -f /ustc-mirror.sh ] && cp -f /ustc-mirror.sh /root/ustc-mirror.sh 2>/dev/null || true
 UBEOF
   (cd "$UbuntuOverlay" && find . | cpio -H newc --create 2>/dev/null) > /tmp/ubuntu-extra.cpio
   UbuntuPad=$(( (512 - $(stat -c%s /tmp/ubuntu-extra.cpio) % 512) % 512 ))
