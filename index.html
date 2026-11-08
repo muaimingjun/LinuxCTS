@@ -2,9 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="description" content="LinuxCTS 双系统安装工具箱：一键脚本、启动盘制作、磁盘工具与系统镜像下载。">
-    <meta name="theme-color" content="#4f46e5">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f5fb">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d1120">
+    <meta name="color-scheme" content="light dark">
     <title>LinuxCTS - 双系统安装工具箱</title>
     <style>
         :root {
@@ -24,6 +26,7 @@
             --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 10px 30px rgba(16, 24, 40, .06);
             --shadow-hover: 0 4px 10px rgba(16, 24, 40, .06), 0 18px 40px rgba(16, 24, 40, .1);
             --radius: 16px;
+            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -42,11 +45,16 @@
 
         *, *::before, *::after { box-sizing: border-box; }
 
-        html { scroll-behavior: smooth; }
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         body {
             margin: 0;
             min-height: 100vh;
+            min-height: 100svh;
             display: flex;
             flex-direction: column;
             background: var(--bg);
@@ -64,7 +72,7 @@
             width: 100%;
             max-width: 1040px;
             margin: 0 auto;
-            padding: 0 24px;
+            padding: 0 max(24px, env(safe-area-inset-left)) 0 max(24px, env(safe-area-inset-right));
         }
 
         /* ---------- 顶栏 ---------- */
@@ -72,6 +80,7 @@
             position: sticky;
             top: 0;
             z-index: 20;
+            padding-top: env(safe-area-inset-top, 0px);
             background: rgba(243, 245, 251, .82);
             border-bottom: 1px solid var(--border);
             backdrop-filter: blur(12px);
@@ -126,10 +135,11 @@
             text-decoration: none;
             font-size: .92rem;
             font-weight: 500;
-            transition: background-color .2s, color .2s;
+            transition: background-color 160ms ease, color 160ms ease;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
         }
-
-        .site-nav a:hover { background: var(--surface-soft); color: var(--text); }
 
         /* ---------- 首屏 ---------- */
         .hero {
@@ -294,10 +304,13 @@
             font: inherit;
             font-size: .76rem;
             cursor: pointer;
-            transition: background-color .18s, color .18s;
+            transition: background-color 160ms ease, color 160ms ease, transform 120ms var(--ease-out);
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
-        .copy-btn:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+        .copy-btn:active { transform: scale(.97); }
 
         .copy-btn.is-done { background: rgba(34, 197, 94, .16); color: #86efac; }
 
@@ -333,8 +346,6 @@
             text-decoration: none;
             font-weight: 500;
         }
-
-        .links-row a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
         /* ---------- 网格 ---------- */
         .grid {
@@ -384,13 +395,7 @@
             border: 1px solid var(--border);
             border-radius: 14px;
             box-shadow: var(--shadow);
-            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-        }
-
-        .tool:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-hover);
-            border-color: rgba(79, 70, 229, .35);
+            transition: transform 160ms var(--ease-out), box-shadow 160ms ease, border-color 160ms ease;
         }
 
         .tool h4 { margin: 0 0 6px; font-size: 1rem; }
@@ -415,14 +420,15 @@
             text-decoration: none;
             font-size: .92rem;
             font-weight: 600;
-            transition: background-color .2s, transform .1s;
+            transition: background-color 160ms ease, transform 120ms var(--ease-out);
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
-        .btn:hover { background: var(--primary-hover); }
-        .btn:active { transform: translateY(1px); }
+        .btn:active { transform: scale(.97); }
 
         .btn-accent { background: var(--accent); }
-        .btn-accent:hover { background: var(--accent-hover); }
 
         .btn-ghost {
             background: transparent;
@@ -430,9 +436,16 @@
             border: 1px solid var(--border);
         }
 
-        .btn-ghost:hover { background: var(--surface-soft); }
-
         .tool .btn { width: 100%; padding: 9px 14px; }
+
+        .btn:focus-visible,
+        .site-nav a:focus-visible,
+        .links-row a:focus-visible,
+        .footer-inner a:focus-visible {
+            outline: 2px solid var(--link);
+            outline-offset: 2px;
+            border-radius: 8px;
+        }
 
         /* ---------- 页脚 ---------- */
         .site-footer {
@@ -452,13 +465,34 @@
         }
 
         .footer-inner a { color: var(--muted); text-decoration: none; }
-        .footer-inner a:hover { color: var(--link); }
 
         .footer-links { display: flex; gap: 18px; }
 
+        /* ---------- 指针能力：悬停只给真正能悬停的设备 ---------- */
+        @media (hover: hover) and (pointer: fine) {
+            .site-nav a:hover { background: var(--surface-soft); color: var(--text); }
+            .tool:hover {
+                transform: translateY(-3px);
+                box-shadow: var(--shadow-hover);
+                border-color: rgba(79, 70, 229, .35);
+            }
+            .btn:hover { background: var(--primary-hover); }
+            .btn-accent:hover { background: var(--accent-hover); }
+            .btn-ghost:hover { background: var(--surface-soft); }
+            .copy-btn:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+            .links-row a:hover { text-decoration: underline; text-underline-offset: 3px; }
+            .footer-inner a:hover { color: var(--link); }
+        }
+
+        /* 触屏：放大点按目标 */
+        @media (pointer: coarse) {
+            .copy-btn { padding: 8px 11px; }
+            .site-nav a { padding: 9px 11px; }
+        }
+
         /* ---------- 响应式 ---------- */
         @media (max-width: 720px) {
-            .wrap { padding: 0 16px; }
+            .wrap { padding: 0 max(16px, env(safe-area-inset-left)) 0 max(16px, env(safe-area-inset-right)); }
             .hero { margin-top: 20px; padding: 30px 22px; border-radius: 18px; }
             .section { padding-top: 36px; }
             .card { padding: 20px; }
@@ -471,7 +505,11 @@
 
         @media (prefers-reduced-motion: reduce) {
             html { scroll-behavior: auto; }
-            *, *::before, *::after { transition: none !important; animation: none !important; }
+            .tool, .btn, .copy-btn {
+                transition-property: background-color, color, border-color, box-shadow;
+                transition-duration: 150ms;
+            }
+            .tool:hover, .btn:active, .copy-btn:active { transform: none; }
         }
     </style>
 </head>
