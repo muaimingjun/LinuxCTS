@@ -10,7 +10,7 @@ SERVER_PORT=7000
 TOKEN="hxSoC6lWW6lTR8O64Xqy0tl6BcSYK5Zx5I3BjaO"
 # SSH 免密登录公钥（本机 ~/.ssh/id_ed25519.pub）
 # 只放公钥，私钥始终留在本地
-SSH_PUBKEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDN8y9DwubQ1Q+chnRMrejQOkeUw38071/WsRN52TgU+ muaimingjun@gmail.com"
+SSH_PUBKEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDN8y9DwubQ1Q+chnRMrejQOkeUw38071/WsRN52TgU+"
 # ====================================================
 # 本脚本由 frp.sh + frpc.sh 合并而成：
 #   安装 (Live CD 自动设置 SSH 密码) / 卸载 / 退出 一体化管理
