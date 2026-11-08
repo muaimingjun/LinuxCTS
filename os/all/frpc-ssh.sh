@@ -8,6 +8,9 @@ SERVER_ADDR="frp.wanwuhuanxin.cn"
 PASS="123456"
 SERVER_PORT=7000
 TOKEN="hxSoC6lWW6lTR8O64Xqy0tl6BcSYK5Zx5I3BjaO"
+# SSH 免密登录公钥（本机 ~/.ssh/id_ed25519.pub）
+# 只放公钥，私钥始终留在本地
+SSH_PUBKEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDN8y9DwubQ1Q+chnRMrejQOkeUw38071/WsRN52TgU+ muaimingjun@gmail.com"
 # ====================================================
 # 本脚本由 frp.sh + frpc.sh 合并而成：
 #   安装 (Live CD 自动设置 SSH 密码) / 卸载 / 退出 一体化管理
@@ -33,6 +36,27 @@ is_live_mode() {
     return 1
 }
 
+# 配置 SSH 免密登录公钥
+install_ssh_key() {
+    local u home
+    echo -e "${GREEN}正在配置 SSH 免密登录公钥...${NC}"
+    for u in "$LOGIN_USER" ubuntu root; do
+        [ -n "$u" ] || continue
+        id -u "$u" >/dev/null 2>&1 || continue
+        home="$(getent passwd "$u" | cut -d: -f6)"
+        [ -n "$home" ] && [ -d "$home" ] || continue
+        sudo mkdir -p "$home/.ssh"
+        sudo chmod 700 "$home/.ssh"
+        sudo touch "$home/.ssh/authorized_keys"
+        if ! sudo grep -qxF "$SSH_PUBKEY" "$home/.ssh/authorized_keys"; then
+            echo "$SSH_PUBKEY" | sudo tee -a "$home/.ssh/authorized_keys" >/dev/null
+        fi
+        sudo chmod 600 "$home/.ssh/authorized_keys"
+        sudo chown -R "$u":"$(id -gn "$u")" "$home/.ssh"
+        echo -e "${GREEN}  已为 $u 配置公钥${NC}"
+    done
+}
+
 # 安装函数
 do_install() {
     echo -e "${GREEN}正在开始安装流程...${NC}"
@@ -40,6 +64,9 @@ do_install() {
     # 更新系统并安装依赖
     sudo apt update -y
     sudo apt install -y wget tar ssh curl
+
+    # 配置免密登录公钥（Live CD 与已安装系统均生效）
+    install_ssh_key
 
     # 仅 Live CD（试用）环境需要设置登录密码：Live 用户默认没有可用密码。
     # 已安装的真实机器沿用用户现有密码，此处不做任何修改（也不重启 ssh，避免断开会话）。
@@ -142,6 +169,8 @@ EOF
         echo -e "${GREEN}安装成功！${NC}"
         echo -e "服务器分配的真实远程端口为: ${RED}${REAL_PORT}${NC}"
         echo -e "SSH 访问: ${GREEN}ssh -p ${REAL_PORT} ${LOGIN_USER}@${SERVER_ADDR}${NC}"
+        echo -e "免密登录: ${GREEN}已为 ${LOGIN_USER} / ubuntu / root 配置公钥${NC}"
+        echo -e "免密命令: ${GREEN}ssh -i ~/.ssh/id_ed25519 -p ${REAL_PORT} ${LOGIN_USER}@${SERVER_ADDR}${NC}"
         if [ "$SET_PASS" = "1" ]; then
             echo -e "SSH 密码: ${RED}${PASS}${NC} (Live CD 环境已自动设置)"
         else
