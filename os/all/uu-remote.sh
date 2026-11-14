@@ -44,7 +44,7 @@ case "$(uname -m)" in
     *) die "不支持的架构: $(uname -m)" ;;
 esac
 
-for c in curl sha256sum script sed grep pkill; do
+for c in sha256sum sed grep pkill; do
     command -v "$c" >/dev/null 2>&1 || die "缺少命令: $c"
 done
 
@@ -55,6 +55,18 @@ fi
 # ---------- 更新软件源 ----------
 info "==> 更新软件源 (apt update)"
 sudo apt update || die "apt update 失败"
+
+# 精简系统可能没有 curl / script，先补上
+if ! command -v curl >/dev/null 2>&1; then
+    info "==> 安装 curl"
+    sudo apt install -y curl || die "安装 curl 失败"
+fi
+if ! command -v script >/dev/null 2>&1; then
+    info "==> 安装 script (util-linux)"
+    sudo apt install -y util-linux-extra 2>/dev/null || sudo apt install -y bsdutils || true
+fi
+command -v curl >/dev/null 2>&1 || die "curl 仍不可用，请手动安装: sudo apt install -y curl"
+command -v script >/dev/null 2>&1 || die "script 仍不可用，请手动安装: sudo apt install -y util-linux-extra"
 
 # ---------- 查询最新版本 ----------
 info "==> 查询最新版本"
