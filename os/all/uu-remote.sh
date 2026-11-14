@@ -184,6 +184,16 @@ fi
 info "==> 安装 UU 远程（deb 会自动带上 ffmpeg 依赖）"
 sudo apt install -y "$TMP/$DEB" || die "安装失败"
 
+# 安装 uinput 规则：Wayland 下输入可不再依赖 portal 的「允许远程交互」开关
+if [ -f /usr/share/doc/uu-remote-linux/60-uu-remote-linux-uinput.rules ]; then
+    info "==> 安装 uinput udev 规则"
+    sudo install -m 644 /usr/share/doc/uu-remote-linux/60-uu-remote-linux-uinput.rules \
+        /etc/udev/rules.d/60-uu-remote-linux-uinput.rules
+    sudo modprobe uinput 2>/dev/null || true
+    sudo udevadm control --reload-rules 2>/dev/null || true
+    sudo udevadm trigger 2>/dev/null || true
+fi
+
 # ---------- 启动访客协助并抓取远程码 ----------
 mkdir -p "$(dirname "$LOG")"
 
@@ -214,6 +224,14 @@ export UU_ASSIST_UI=tty
 export UU_ASSIST_ALLOW=1
 export UU_CONFIG="$HOME/.config/uuremote/assist/config.json"
 
+if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
+    warn "如果弹出系统「Remote Desktop」授权窗口，请："
+    warn "  1) 打开 Allow Remote Interaction（允许远程交互）"
+    warn "  2) 勾选 Remember This Selection（记住选择）"
+    warn "  3) 点击 Share"
+    warn "这是 GNOME 的系统权限，脚本无法代点；勾选记住后下次不再弹。"
+fi
+
 # 先持有 FIFO 写端：否则 script 的 stdin 立刻 EOF，assist 读 /dev/tty 会直接退出
 setsid bash -c 'exec 3<>"$1"; exec sleep infinity' _ "$FIFO" >/dev/null 2>&1 &
 echo $! > "$HOLDERFILE"
@@ -223,17 +241,20 @@ echo $! > "$PIDFILE"
 
 ID=""
 CODE=""
-for _ in $(seq 1 45); do
+for i in $(seq 1 180); do
     ID=$(grep -a '设备 ID:' "$LOG" 2>/dev/null | tail -1 | sed 's/.*设备 ID:[[:space:]]*//' | tr -d '\r')
     CODE=$(grep -a '临时验证码:' "$LOG" 2>/dev/null | tail -1 | sed 's/.*临时验证码:[[:space:]]*//' | tr -d '\r')
     [ -n "$ID" ] && [ -n "$CODE" ] && break
+    if [ $((i % 15)) -eq 0 ]; then
+        warn "    仍在等待远程码（${i}s）... 如果弹出授权窗口，请点 Share 并打开 Allow Remote Interaction"
+    fi
     sleep 1
 done
 
 if [ -z "$ID" ] || [ -z "$CODE" ]; then
     warn "未能获取远程码，最近的日志："
     tail -n 30 "$LOG" 2>/dev/null
-    die "如果日志提示需要桌面环境，请在 Ubuntu 桌面会话的终端里运行本脚本。"
+    die "assist 仍在后台运行。请先在系统授权窗口点击 Share（并打开 Allow Remote Interaction），然后重新运行本脚本。"
 fi
 
 echo
