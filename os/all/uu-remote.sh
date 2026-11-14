@@ -87,15 +87,14 @@ parse_tag() {
 
 info "==> 查询最新版本"
 VER=""
-MIRROR_USED=""
 for base in "${MIRRORS[@]}" ""; do
     label="${base:-直连 GitHub}"
     info "    尝试: ${label}"
     # releases.atom 是静态文件，镜像更可能代理；再退到 latest 页面
     VER=$(parse_tag "$(fetch "${base}${GH}/releases.atom")")
-    [ -n "$VER" ] && MIRROR_USED="$base" && break
+    [ -n "$VER" ] && break
     VER=$(parse_tag "$(fetch "${base}${GH}/releases/latest")")
-    [ -n "$VER" ] && MIRROR_USED="$base" && break
+    [ -n "$VER" ] && break
 done
 
 if [ -z "$VER" ]; then
@@ -196,14 +195,30 @@ fi
 pkill -u "$(id -u)" -f "${APP} assist" 2>/dev/null || true
 sleep 1
 
-# script 需要一个 pty：assist 会把远程码写到 /dev/tty，文件权限设为 600
+# assist 会把远程码写到 /dev/tty；用 script 提供 pty，文件权限设为 600
 install -m 600 /dev/null "$LOG"
 
-info "==> 启动远程协助（访客模式）"
+FIFO="$HOME/.cache/uuremote-assist.stdin"
+HOLDERFILE="$HOME/.cache/uuremote-assist.holder"
+
+# 清理上一次的 FIFO 持有进程
+if [ -f "$HOLDERFILE" ]; then
+    kill "$(cat "$HOLDERFILE")" 2>/dev/null || true
+    rm -f "$HOLDERFILE"
+fi
+rm -f "$FIFO"
+mkfifo -m 600 "$FIFO" || die "无法创建 FIFO: $FIFO"
+
+info "==> 启动远程协助（访客模式，自动允许控制）"
 export UU_ASSIST_UI=tty
 export UU_ASSIST_ALLOW=1
 export UU_CONFIG="$HOME/.config/uuremote/assist/config.json"
-setsid script -q -f -c "${APP} assist" "$LOG" </dev/null >/dev/null 2>&1 &
+
+# 先持有 FIFO 写端：否则 script 的 stdin 立刻 EOF，assist 读 /dev/tty 会直接退出
+setsid bash -c 'exec 3<>"$1"; exec sleep infinity' _ "$FIFO" >/dev/null 2>&1 &
+echo $! > "$HOLDERFILE"
+
+setsid script -q -f -c "${APP} assist" "$LOG" < "$FIFO" >/dev/null 2>&1 &
 echo $! > "$PIDFILE"
 
 ID=""
@@ -229,5 +244,5 @@ ok "=============================================="
 echo
 warn "验证码只保存在本机 ${LOG}（权限 600），不会写入系统日志。"
 warn "验证码会按设置刷新；刷新后可查看日志最新一段。"
-warn "停止协助: pkill -u $(id -u) -f '${APP} assist'"
+warn "停止协助: pkill -u $(id -u) -f '${APP} assist'; pkill -u $(id -u) -f 'uuremote-assist.stdin'"
 warn "卸载:     sudo apt remove -y uu-remote-linux"
