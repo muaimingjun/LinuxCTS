@@ -68,32 +68,95 @@ fi
 command -v curl >/dev/null 2>&1 || die "curl 仍不可用，请手动安装: sudo apt install -y curl"
 command -v script >/dev/null 2>&1 || die "script 仍不可用，请手动安装: sudo apt install -y util-linux-extra"
 
-# ---------- 查询最新版本 ----------
+# ---------- 查询最新版本（GitHub 直连 + 国内加速镜像） ----------
+GH="https://github.com/${REPO}"
+MIRRORS=(
+    "https://ghfast.top/"
+    "https://gh-proxy.com/"
+    "https://gh.llkk.cc/"
+    "https://ghproxy.net/"
+)
+
+fetch() {
+    curl -fsSL --connect-timeout 4 --max-time "${2:-8}" "$1" 2>/dev/null
+}
+
+parse_tag() {
+    printf '%s' "$1" | grep -oE '/releases/(tag|download)/v[0-9][0-9.]*' | head -1 | sed 's#.*/v##'
+}
+
 info "==> 查询最新版本"
-LATEST=$(curl -fsSIL -o /dev/null -w '%{url_effective}' "https://github.com/${REPO}/releases/latest") \
-    || die "无法访问 GitHub Releases，请检查网络"
-case "$LATEST" in
-    */tag/v*) VER="${LATEST##*/tag/v}" ;;
-    *) die "无法解析最新版本号: $LATEST" ;;
-esac
+VER=""
+MIRROR_USED=""
+for base in "${MIRRORS[@]}" ""; do
+    label="${base:-直连 GitHub}"
+    info "    尝试: ${label}"
+    # releases.atom 是静态文件，镜像更可能代理；再退到 latest 页面
+    VER=$(parse_tag "$(fetch "${base}${GH}/releases.atom")")
+    [ -n "$VER" ] && MIRROR_USED="$base" && break
+    VER=$(parse_tag "$(fetch "${base}${GH}/releases/latest")")
+    [ -n "$VER" ] && MIRROR_USED="$base" && break
+done
+
+if [ -z "$VER" ]; then
+    info "    尝试: jsDelivr"
+    VER=$(fetch "https://data.jsdelivr.com/v1/packages/gh/${REPO}" 15 \
+        | grep -oE '"version":"v?[0-9][0-9.]*"' \
+        | sed 's/.*:"v\?//;s/"$//' | sort -V | tail -1)
+fi
+[ -n "$VER" ] || die "无法获取最新版本号：GitHub 与镜像均不可用，请检查网络"
 ok "最新版本: v${VER}"
 
 DEB="uu-remote-linux_${VER}_${ARCH}.deb"
-URL="https://github.com/${REPO}/releases/download/v${VER}/${DEB}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-info "==> 下载 ${DEB}"
-curl -fL --retry 3 --connect-timeout 15 -o "$TMP/$DEB" "$URL" || die "下载失败: $URL"
+# ---------- 获取 sha256（优先直连 GitHub，其次镜像） ----------
+EXPECTED=""
+for base in "" "${MIRRORS[@]}"; do
+    EXPECTED=$(fetch "${base}${GH}/releases/download/v${VER}/${DEB}.sha256" 10 | grep -oE '[0-9a-f]{64}' | head -1)
+    [ -n "$EXPECTED" ] && break
+done
 
-# 校验 sha256（Release 附带 .sha256）
-EXPECTED=$(curl -fsSL "${URL}.sha256" 2>/dev/null | grep -oE '[0-9a-f]{64}' | head -1)
+# ---------- 下载 deb（逐个镜像尝试，sha256 不符就换源） ----------
+info "==> 下载 ${DEB}"
+DEB_OK=0
+DEB_BASE=""
+SEEN=" "
+for base in "$MIRROR_USED" "${MIRRORS[@]}" ""; do
+    key="${base:-direct}"
+    case "$SEEN" in *" $key "*) continue ;; esac
+    SEEN="$SEEN$key "
+    label="${base:-直连 GitHub}"
+    info "    尝试: ${label}"
+    if ! curl -fL --connect-timeout 8 --max-time 900 --retry 1 \
+        --speed-time 30 --speed-limit 1024 \
+        -o "$TMP/$DEB" "${base}${GH}/releases/download/v${VER}/${DEB}"; then
+        continue
+    fi
+    if [ -n "$EXPECTED" ]; then
+        ACTUAL=$(sha256sum "$TMP/$DEB" | cut -d' ' -f1)
+        if [ "$ACTUAL" != "$EXPECTED" ]; then
+            warn "    sha256 不匹配，换下一个源"
+            rm -f "$TMP/$DEB"
+            continue
+        fi
+    fi
+    DEB_OK=1
+    DEB_BASE="$base"
+    break
+done
+[ "$DEB_OK" = "1" ] || die "下载失败：GitHub 与镜像均不可用，或镜像内容校验不通过"
+
 if [ -n "$EXPECTED" ]; then
-    ACTUAL=$(sha256sum "$TMP/$DEB" | cut -d' ' -f1)
-    [ "$EXPECTED" = "$ACTUAL" ] || die "sha256 校验失败"
     ok "sha256 校验通过"
 else
     warn "未获取到 sha256，跳过校验"
+fi
+if [ -n "$DEB_BASE" ]; then
+    ok "下载源: ${DEB_BASE}"
+else
+    ok "下载源: 直连 GitHub"
 fi
 
 # ---------- 安装 ----------
