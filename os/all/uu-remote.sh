@@ -118,12 +118,34 @@ for base in "" "${MIRRORS[@]}"; do
     [ -n "$EXPECTED" ] && break
 done
 
-# ---------- 下载 deb（逐个镜像尝试，sha256 不符就换源） ----------
+# ---------- 测速选源（各源取前 1MB，选最快的） ----------
+deb_url() { printf '%s' "$1${GH}/releases/download/v${VER}/${DEB}"; }
+
+info "==> 测速选择下载源"
+BEST_BASE="__none__"
+BEST_SPEED=0
+for base in "${MIRRORS[@]}" ""; do
+    label="${base:-直连 GitHub}"
+    speed=$(curl -fsL -r 0-1048575 --connect-timeout 4 --max-time 6 -o /dev/null \
+        -w '%{speed_download}' "$(deb_url "$base")" 2>/dev/null || true)
+    case "$speed" in ''|*[!0-9.]*) speed=0 ;; esac
+    printf '    %-28s %s KB/s\n' "$label" "$(awk -v s="$speed" 'BEGIN{printf "%.0f", s/1024}')"
+    if awk -v a="$speed" -v b="$BEST_SPEED" 'BEGIN{exit !(a>b)}'; then
+        BEST_SPEED="$speed"
+        BEST_BASE="$base"
+    fi
+done
+[ "$BEST_BASE" = "__none__" ] && BEST_BASE=""
+if awk -v s="$BEST_SPEED" 'BEGIN{exit !(s < 102400)}'; then
+    warn "所有源测速都偏慢（<100 KB/s），可能是网络高峰或镜像限速，下载会比较久。"
+fi
+
+# ---------- 下载 deb（先最快源，再逐个回退） ----------
 info "==> 下载 ${DEB}"
 DEB_OK=0
 DEB_BASE=""
 SEEN=" "
-for base in "$MIRROR_USED" "${MIRRORS[@]}" ""; do
+for base in "$BEST_BASE" "${MIRRORS[@]}" ""; do
     key="${base:-direct}"
     case "$SEEN" in *" $key "*) continue ;; esac
     SEEN="$SEEN$key "
@@ -131,7 +153,7 @@ for base in "$MIRROR_USED" "${MIRRORS[@]}" ""; do
     info "    尝试: ${label}"
     if ! curl -fL --connect-timeout 8 --max-time 900 --retry 1 \
         --speed-time 30 --speed-limit 1024 \
-        -o "$TMP/$DEB" "${base}${GH}/releases/download/v${VER}/${DEB}"; then
+        -o "$TMP/$DEB" "$(deb_url "$base")"; then
         continue
     fi
     if [ -n "$EXPECTED" ]; then
