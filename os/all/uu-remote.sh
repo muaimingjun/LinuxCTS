@@ -44,7 +44,7 @@ case "$(uname -m)" in
     *) die "不支持的架构: $(uname -m)" ;;
 esac
 
-for c in sha256sum sed grep pkill; do
+for c in sha256sum sed grep pkill pgrep; do
     command -v "$c" >/dev/null 2>&1 || die "缺少命令: $c"
 done
 
@@ -106,6 +106,20 @@ fi
 [ -n "$VER" ] || die "无法获取最新版本号：GitHub 与镜像均不可用，请检查网络"
 ok "最新版本: v${VER}"
 
+# ---------- 已安装版本比较 ----------
+INSTALLED=$(dpkg-query -W -f='${Version}' uu-remote-linux 2>/dev/null || true)
+NEED_INSTALL=0
+if [ -z "$INSTALLED" ]; then
+    info "未安装 uu-remote-linux，准备安装 v${VER}"
+    NEED_INSTALL=1
+elif dpkg --compare-versions "$INSTALLED" lt "$VER" 2>/dev/null; then
+    info "已安装 v${INSTALLED}，准备更新到 v${VER}"
+    NEED_INSTALL=1
+else
+    ok "已安装 v${INSTALLED}，已是最新，跳过下载与安装"
+fi
+
+if [ "$NEED_INSTALL" = "1" ]; then
 DEB="uu-remote-linux_${VER}_${ARCH}.deb"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -181,8 +195,9 @@ else
 fi
 
 # ---------- 安装 ----------
-info "==> 安装 UU 远程（deb 会自动带上 ffmpeg 依赖）"
+info "==> 安装/更新 UU 远程（deb 会自动带上 ffmpeg 依赖）"
 sudo apt install -y "$TMP/$DEB" || die "安装失败"
+fi
 
 # 安装 uinput 规则：Wayland 下输入可不再依赖 portal 的「允许远程交互」开关
 if [ -f /usr/share/doc/uu-remote-linux/60-uu-remote-linux-uinput.rules ]; then
@@ -194,50 +209,52 @@ if [ -f /usr/share/doc/uu-remote-linux/60-uu-remote-linux-uinput.rules ]; then
     sudo udevadm trigger 2>/dev/null || true
 fi
 
-# ---------- 启动访客协助并抓取远程码 ----------
+# ---------- 启动（或复用）访客协助并抓取远程码 ----------
 mkdir -p "$(dirname "$LOG")"
-
-# 停掉本脚本上一次启动的实例
-if [ -f "$PIDFILE" ]; then
-    kill "$(cat "$PIDFILE")" 2>/dev/null || true
-    rm -f "$PIDFILE"
-fi
-pkill -u "$(id -u)" -f "${APP} assist" 2>/dev/null || true
-sleep 1
-
-# assist 会把远程码写到 /dev/tty；用 script 提供 pty，文件权限设为 600
-install -m 600 /dev/null "$LOG"
-
 FIFO="$HOME/.cache/uuremote-assist.stdin"
 HOLDERFILE="$HOME/.cache/uuremote-assist.holder"
 
-# 清理上一次的 FIFO 持有进程
-if [ -f "$HOLDERFILE" ]; then
-    kill "$(cat "$HOLDERFILE")" 2>/dev/null || true
-    rm -f "$HOLDERFILE"
+if pgrep -u "$(id -u)" -f "${APP} assist" >/dev/null 2>&1; then
+    info "==> 远程协助已在运行，直接读取远程码"
+else
+    # 清理上一次的残留
+    if [ -f "$PIDFILE" ]; then
+        kill "$(cat "$PIDFILE")" 2>/dev/null || true
+        rm -f "$PIDFILE"
+    fi
+    pkill -u "$(id -u)" -f "${APP} assist" 2>/dev/null || true
+    if [ -f "$HOLDERFILE" ]; then
+        kill "$(cat "$HOLDERFILE")" 2>/dev/null || true
+        rm -f "$HOLDERFILE"
+    fi
+    sleep 1
+
+    # assist 会把远程码写到 /dev/tty；用 script 提供 pty，文件权限设为 600
+    install -m 600 /dev/null "$LOG"
+
+    rm -f "$FIFO"
+    mkfifo -m 600 "$FIFO" || die "无法创建 FIFO: $FIFO"
+
+    info "==> 启动远程协助（访客模式，自动允许控制）"
+    export UU_ASSIST_UI=tty
+    export UU_ASSIST_ALLOW=1
+    export UU_CONFIG="$HOME/.config/uuremote/assist/config.json"
+
+    if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
+        warn "如果弹出系统「Remote Desktop」授权窗口，请："
+        warn "  1) 打开 Allow Remote Interaction（允许远程交互）"
+        warn "  2) 勾选 Remember This Selection（记住选择）"
+        warn "  3) 点击 Share"
+        warn "这是 GNOME 的系统权限，脚本无法代点；勾选记住后下次不再弹。"
+    fi
+
+    # 先持有 FIFO 写端：否则 script 的 stdin 立刻 EOF，assist 读 /dev/tty 会直接退出
+    setsid bash -c 'exec 3<>"$1"; exec sleep infinity' _ "$FIFO" >/dev/null 2>&1 &
+    echo $! > "$HOLDERFILE"
+
+    setsid script -q -f -c "${APP} assist" "$LOG" < "$FIFO" >/dev/null 2>&1 &
+    echo $! > "$PIDFILE"
 fi
-rm -f "$FIFO"
-mkfifo -m 600 "$FIFO" || die "无法创建 FIFO: $FIFO"
-
-info "==> 启动远程协助（访客模式，自动允许控制）"
-export UU_ASSIST_UI=tty
-export UU_ASSIST_ALLOW=1
-export UU_CONFIG="$HOME/.config/uuremote/assist/config.json"
-
-if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
-    warn "如果弹出系统「Remote Desktop」授权窗口，请："
-    warn "  1) 打开 Allow Remote Interaction（允许远程交互）"
-    warn "  2) 勾选 Remember This Selection（记住选择）"
-    warn "  3) 点击 Share"
-    warn "这是 GNOME 的系统权限，脚本无法代点；勾选记住后下次不再弹。"
-fi
-
-# 先持有 FIFO 写端：否则 script 的 stdin 立刻 EOF，assist 读 /dev/tty 会直接退出
-setsid bash -c 'exec 3<>"$1"; exec sleep infinity' _ "$FIFO" >/dev/null 2>&1 &
-echo $! > "$HOLDERFILE"
-
-setsid script -q -f -c "${APP} assist" "$LOG" < "$FIFO" >/dev/null 2>&1 &
-echo $! > "$PIDFILE"
 
 ID=""
 CODE=""
